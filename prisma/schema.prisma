@@ -1,0 +1,597 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  EO
+  HC
+  TI
+  GO
+  USER
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum FormStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
+enum PropertyType {
+  LAND_AND_BUILDING
+  VACANT_LAND
+}
+
+enum OwnershipType {
+  SINGLE_OWNER
+  JOINT_OWNER
+  INSTITUTIONAL
+  GOVERNMENT
+}
+
+enum OccupancyType {
+  SELF_OCCUPIED
+  TENANT
+}
+
+enum UsageCategory {
+  RESIDENTIAL
+  COMMERCIAL
+  OTHER
+}
+
+enum ConstructionType {
+  RCC_ROOF
+  ASBESTOS_ROOF
+  OTHER
+}
+
+enum RoadType {
+  PRINCIPAL_MAIN_ROAD
+  MAIN_ROAD
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+enum PaymentMode {
+  ONLINE
+  CASH
+  CHEQUE
+  DD
+  NEFT
+  RTGS
+}
+
+enum DisputeStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  REJECTED
+}
+
+enum GrievanceStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum HousingScheme {
+  YES
+  NO
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum ContentPurpose {
+  GALLERY
+  ANNOUNCEMENT
+  NOTICE
+  BANNER
+}
+
+model User {
+  id            String     @id @default(cuid())
+  firstName     String     @map("first_name")
+  lastName      String     @map("last_name")
+  email         String?    @unique
+  mobile        String     @unique
+  passwordHash  String?    @map("password_hash")
+  role          UserRole   @default(USER)
+  status        UserStatus @default(ACTIVE)
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+
+  staffProfile    Staff?
+  properties      Property[]       @relation("PropertyOwner")
+  assessments     Assessment[]     @relation("AssessmentCreatedBy")
+  submittedForms  Assessment[]     @relation("AssessmentSubmittedBy")
+  approvedForms   Assessment[]     @relation("AssessmentApprovedBy")
+  modifiedForms   Assessment[]     @relation("AssessmentModifiedBy")
+  payments        Payment[]        @relation("PaymentPaidBy")
+  ordersCreated   Payment[]        @relation("PaymentOrderCreatedBy")
+  disputes        Dispute[]        @relation("DisputeCreatedBy")
+  grievances      Grievance[]
+
+  @@map("users")
+}
+
+model OtpVerification {
+  id        String   @id @default(cuid())
+  mobile    String
+  otp       String
+  expiresAt DateTime @map("expires_at")
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("otp_verifications")
+}
+
+model Staff {
+  id        String   @id @default(cuid())
+  userId    String   @unique @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  assignedWards StaffWardAssignment[]
+
+  @@map("staffs")
+}
+
+model StaffWardAssignment {
+  id      String @id @default(cuid())
+  staffId String @map("staff_id")
+  wardId  String @map("ward_id")
+
+  staff Staff @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  ward  Ward  @relation(fields: [wardId], references: [id], onDelete: Cascade)
+
+  @@unique([staffId, wardId])
+  @@map("staff_ward_assignments")
+}
+
+model Ward {
+  id          String @id @default(cuid())
+  name        String @unique
+  description String @default("")
+
+  properties       Property[]
+  staffAssignments StaffWardAssignment[]
+
+  @@map("wards")
+}
+
+model Road {
+  id          String   @id @default(cuid())
+  name        String
+  roadType    RoadType @map("road_type")
+  description String   @default("")
+
+  properties Property[]
+
+  @@map("roads")
+}
+
+model AssessmentYear {
+  id        String  @id @default(cuid())
+  year      String  @unique
+  isCurrent Boolean @default(false) @map("is_current")
+
+  arvRates             ArvRate[]
+  propertyTaxRates     PropertyTaxRate[]
+  occupancyTypeConfigs OccupancyTypeConfig[]
+  usageTypeConfigs     UsageTypeConfig[]
+  usageFactorConfigs   UsageFactorConfig[]
+  discountTypeConfigs  DiscountTypeConfig[]
+  interestRateConfigs  InterestRateConfig[]
+  vacantLandTaxRates   VacantLandTaxRate[]
+  vacantLandThresholds VacantLandThreshold[]
+  assessments          Assessment[]
+
+  @@map("assessment_years")
+}
+
+model ArvRate {
+  id               String           @id @default(cuid())
+  assessmentYearId String           @map("assessment_year_id")
+  roadType         RoadType         @map("road_type")
+  constructionType ConstructionType @map("construction_type")
+  usageCategory    UsageCategory    @map("usage_category")
+  ratePerSqFt      Float            @map("rate_per_sq_ft")
+
+  assessmentYear AssessmentYear @relation(fields: [assessmentYearId], references: [id])
+
+  @@unique([assessmentYearId, roadType, constructionType, usageCategory])
+  @@map("arv_rates")
+}
+
+model PropertyTaxRate {
+  id               String @id @default(cuid())
+  assessmentYearId String @map("assessment_year_id")
+  ratePercent      Float  @map("rate_percent")
+
+  assessmentYear AssessmentYear @relation(fields: [assessmentYearId], references: [id])
+
+  @@unique([assessmentYearId])
+  @@map("property_tax_rates")
+}
+
+model OccupancyTypeConfig {
+  id               String        @id @default(cuid())
+  assessmentYearId String        @map("assessment_year_id")
+  occupancyType    OccupancyType @map("occupancy_type")
+  multiplierValue  Float         @map("multiplier_value")
+
+  assessmentYear AssessmentYear @relation(fields: [assessmentYearId], references: [id])
+
+  @@unique([assessmentYearId, occupancyType])
+  @@map("occupancy_type_configs")
+}
+
+model UsageTypeConfig {
+  id               String        @id @default(cuid())
+  assessmentYearId String        @map("assessment_year_id")
+  usageCategory    UsageCategory @map("usage_category")
+  multiplierValue  Float         @map("multiplier_value")
+
+  assessmentYear AssessmentYear @relation(fields: [assessmentYearId], references: [id])
+
+  @@unique([assessmentYearId, usageCategory])
+  @@map("usage_type_configs")
+}
+
+model UsageFactorConfig {
+  id               String @id @default(cuid())
+  assessmentYearId String @map("assessment_year_id")
+  factorName       String @map("factor_name")
+  multiplierValue  Float  @map("multiplier_value")
+
+  assessmentYear AssessmentYear @relation(fields: [assessmentYearId], references: [id])
+
+  @@unique([assessmentYearId, factorName])
+  @@map("usage_factor_configs")
+}
+
+model DiscountTypeConfig {
+  id               String @id @default(cuid())
+  assessmentYearId String @map("assessment_year_id")
+  discountType     String @map("discount_type")
+  ratePercent      Float  @map("rate_percent")
+
+  assessmentYear AssessmentYear @relation(fields: [assessmentYearId], references: [id])
+
+  @@unique([assessmentYearId, discountType])
+  @@map("discount_type_configs")
+}
+
+model InterestRateConfig {
+  id               String @id @default(cuid())
+  assessmentYearId String @map("assessment_year_id")
+  ratePercent      Float  @map("rate_percent")
+
+  assessmentYear AssessmentYear @relation(fields: [assessmentYearId], references: [id])
+
+  @@unique([assessmentYearId])
+  @@map("interest_rate_configs")
+}
+
+model SolidWasteCharge {
+  id           String @id @default(cuid())
+  consumerType String @map("consumer_type")
+  yearlyCharge Float  @map("yearly_charge")
+  sortOrder    Int    @default(0) @map("sort_order")
+
+  @@map("solid_waste_charges")
+}
+
+model VacantLandTaxRate {
+  id               String   @id @default(cuid())
+  assessmentYearId String   @map("assessment_year_id")
+  roadType         RoadType @map("road_type")
+  ratePerSqFt      Float    @map("rate_per_sq_ft")
+
+  assessmentYear AssessmentYear @relation(fields: [assessmentYearId], references: [id])
+
+  @@unique([assessmentYearId, roadType])
+  @@map("vacant_land_tax_rates")
+}
+
+model VacantLandThreshold {
+  id               String @id @default(cuid())
+  assessmentYearId String @map("assessment_year_id")
+  thresholdPercent Float  @map("threshold_percent")
+
+  assessmentYear AssessmentYear @relation(fields: [assessmentYearId], references: [id])
+
+  @@unique([assessmentYearId])
+  @@map("vacant_land_thresholds")
+}
+
+model SystemSetting {
+  id          String  @id @default(cuid())
+  settingName String  @unique @map("setting_name")
+  enabled     Boolean @default(false)
+  description String  @default("")
+
+  @@map("system_settings")
+}
+
+model Property {
+  id                 String             @id @default(cuid())
+  propertyId         String             @unique @map("property_id")
+  propertyType       PropertyType       @map("property_type")
+  ownershipType      OwnershipType      @map("ownership_type")
+  housingScheme      HousingScheme      @default(NO) @map("housing_scheme")
+  wardId             String             @map("ward_id")
+  roadId             String?            @map("road_id")
+  ownerId            String             @map("owner_id")
+  oldHoldingNumber   String?            @map("old_holding_number")
+  newHoldingNumber   String?            @map("new_holding_number")
+  acquisitionDate    DateTime?          @map("acquisition_date")
+  verificationStatus VerificationStatus @default(PENDING) @map("verification_status")
+  ownerName          String             @map("owner_name")
+  guardianName       String?            @map("guardian_name")
+  gender             Gender?
+  propertyAddress    String?            @map("property_address")
+  propertyCity       String?            @map("property_city")
+  propertyState      String?            @map("property_state")
+  propertyPincode    String?            @map("property_pincode")
+  corrAddress        String?            @map("corr_address")
+  corrCity           String?            @map("corr_city")
+  corrState          String?            @map("corr_state")
+  corrPincode        String?            @map("corr_pincode")
+  mobile             String
+  email              String?
+  alternateMobile    String?            @map("alternate_mobile")
+  waterConnection    Boolean            @default(false) @map("water_connection")
+  solidWasteConsumerType String?        @map("solid_waste_consumer_type")
+  constructionType   ConstructionType?  @map("construction_type")
+  occupancyType      OccupancyType?     @map("occupancy_type_value")
+  usageCategory      UsageCategory?     @map("usage_category")
+  usageFactor        String?            @map("usage_factor")
+  plotAreaSqFt       Float?             @map("plot_area_sq_ft")
+  builtUpAreaSqFt    Float?             @map("built_up_area_sq_ft")
+  numberOfFloors     Int?               @map("number_of_floors")
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+
+  ward        Ward     @relation(fields: [wardId], references: [id])
+  road        Road?    @relation(fields: [roadId], references: [id])
+  owner       User     @relation("PropertyOwner", fields: [ownerId], references: [id])
+  assessments Assessment[]
+  disputes    Dispute[]
+  grievances  Grievance[]
+
+  @@map("properties")
+}
+
+model Assessment {
+  id               String     @id @default(cuid())
+  assessmentYearId String     @map("assessment_year_id")
+  propertyId       String     @map("property_id")
+  formStatus       FormStatus @default(DRAFT) @map("form_status")
+  arvAmount        Float?     @map("arv_amount")
+  propertyTax      Float?     @map("property_tax")
+  totalDiscount    Float?     @map("total_discount")
+  solidWasteCharge Float?     @map("solid_waste_charge")
+  waterCharge      Float?     @map("water_charge")
+  fineAmount       Float?     @map("fine_amount")
+  interestAmount   Float?     @map("interest_amount")
+  totalDemand      Float?     @map("total_demand")
+  netPayable       Float?     @map("net_payable")
+  createdById      String?    @map("created_by_id")
+  submittedById    String?    @map("submitted_by_id")
+  approvedById     String?    @map("approved_by_id")
+  lastModifiedById String?    @map("last_modified_by_id")
+  createdAt        DateTime   @default(now()) @map("created_at")
+  updatedAt        DateTime   @updatedAt @map("updated_at")
+  submittedAt      DateTime?  @map("submitted_at")
+  approvedAt       DateTime?  @map("approved_at")
+
+  assessmentYear AssessmentYear @relation(fields: [assessmentYearId], references: [id])
+  property       Property       @relation(fields: [propertyId], references: [id])
+  createdBy      User?          @relation("AssessmentCreatedBy", fields: [createdById], references: [id])
+  submittedBy    User?          @relation("AssessmentSubmittedBy", fields: [submittedById], references: [id])
+  approvedBy     User?          @relation("AssessmentApprovedBy", fields: [approvedById], references: [id])
+  lastModifiedBy User?          @relation("AssessmentModifiedBy", fields: [lastModifiedById], references: [id])
+  demands        Demand[]
+
+  @@unique([assessmentYearId, propertyId])
+  @@map("assessments")
+}
+
+model Demand {
+  id            String   @id @default(cuid())
+  demandId      String   @unique @map("demand_id")
+  assessmentId  String   @map("assessment_id")
+  amount        Float
+  balanceAmount Float    @map("balance_amount")
+  status        String   @default("UNPAID")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id])
+  payments   Payment[]
+  disputes   Dispute[]
+
+  @@map("demands")
+}
+
+model Payment {
+  id               String        @id @default(cuid())
+  paymentId        String?       @unique @map("payment_id")
+  orderId          String?       @map("order_id")
+  demandId         String        @map("demand_id")
+  amount           Float
+  paymentMode      PaymentMode   @map("payment_mode")
+  paymentStatus    PaymentStatus @default(PENDING) @map("payment_status")
+  chequeNumber     String?       @map("cheque_number")
+  transactionRef   String?       @map("transaction_ref")
+  paidById         String?       @map("paid_by_id")
+  orderCreatedById String?       @map("order_created_by_id")
+  paymentDate      DateTime?     @map("payment_date")
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+
+  demand         Demand @relation(fields: [demandId], references: [id])
+  paidBy         User?  @relation("PaymentPaidBy", fields: [paidById], references: [id])
+  orderCreatedBy User?  @relation("PaymentOrderCreatedBy", fields: [orderCreatedById], references: [id])
+
+  @@map("payments")
+}
+
+model Dispute {
+  id               String        @id @default(cuid())
+  propertyId       String        @map("property_id")
+  demandId         String?       @map("demand_id")
+  subject          String
+  description      String
+  status           DisputeStatus @default(OPEN)
+  comments         String?
+  supportingDocUrl String?       @map("supporting_doc_url")
+  createdById      String        @map("created_by_id")
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+
+  property  Property @relation(fields: [propertyId], references: [id])
+  demand    Demand?  @relation(fields: [demandId], references: [id])
+  createdBy User     @relation("DisputeCreatedBy", fields: [createdById], references: [id])
+
+  @@map("disputes")
+}
+
+model Grievance {
+  id         String          @id @default(cuid())
+  propertyId String?         @map("property_id")
+  wardId     String?         @map("ward_id")
+  userId     String          @map("user_id")
+  subject    String
+  message    String
+  status     GrievanceStatus @default(OPEN)
+  createdAt  DateTime        @default(now()) @map("created_at")
+  updatedAt  DateTime        @updatedAt @map("updated_at")
+
+  property Property? @relation(fields: [propertyId], references: [id])
+  user     User      @relation(fields: [userId], references: [id])
+
+  @@map("grievances")
+}
+
+model WebsiteContent {
+  id           String         @id @default(cuid())
+  purpose      ContentPurpose @default(GALLERY)
+  title        String?
+  description  String?
+  thumbnailUrl String?        @map("thumbnail_url")
+  startDate    DateTime?      @map("start_date")
+  endDate      DateTime?      @map("end_date")
+  isActive     Boolean        @default(true) @map("is_active")
+  sortOrder    Int            @default(0) @map("sort_order")
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+
+  @@map("website_contents")
+}
+
+model HelplineNumber {
+  id          String  @id @default(cuid())
+  name        String
+  number      String
+  designation String?
+  isActive    Boolean @default(true) @map("is_active")
+  sortOrder   Int     @default(0) @map("sort_order")
+
+  @@map("helpline_numbers")
+}
+
+model UsefulLink {
+  id        String  @id @default(cuid())
+  title     String
+  url       String
+  isActive  Boolean @default(true) @map("is_active")
+  sortOrder Int     @default(0) @map("sort_order")
+
+  @@map("useful_links")
+}
+
+model OfficerProfile {
+  id          String  @id @default(cuid())
+  name        String
+  designation String
+  photoUrl    String? @map("photo_url")
+  mobile      String?
+  email       String?
+  isActive    Boolean @default(true) @map("is_active")
+  sortOrder   Int     @default(0) @map("sort_order")
+
+  @@map("officer_profiles")
+}
+
+model WebsiteAboutUs {
+  id      String @id @default(cuid())
+  content String
+
+  @@map("website_about_us")
+}
+
+model WebsiteService {
+  id           String  @id @default(cuid())
+  name         String
+  description  String?
+  iconUrl      String? @map("icon_url")
+  isKeyService Boolean @default(false) @map("is_key_service")
+  isActive     Boolean @default(true) @map("is_active")
+  sortOrder    Int     @default(0) @map("sort_order")
+
+  @@map("website_services")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?  @map("user_id")
+  userEmail String?  @map("user_email")
+  userName  String?  @map("user_name")
+  userRole  String?  @map("user_role")
+  action    String
+  entity    String
+  entityId  String?  @map("entity_id")
+  details   String?
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([action])
+  @@index([entity])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
