@@ -77,12 +77,29 @@ export function DataPage({
   const [editItem, setEditItem] = useState<any>(null);
   const [form, setForm] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState("");
   const hasFileFields = addFields?.some((f) => f.type === "file");
 
   const load = () => {
     setLoading(true);
+    setLoadError("");
     const params = `?page=${page}&pageSize=25${search ? `&search=${encodeURIComponent(search)}` : ""}`;
-    api(`${apiPath}${params}`).then(d => { setData(d.data || []); setTotal(d.pagination?.total || 0); setLoading(false); }).catch(() => setLoading(false));
+    api(`${apiPath}${params}`)
+      .then((d) => {
+        if (d.error) {
+          setLoadError(d.error);
+          setData([]);
+          setTotal(0);
+        } else {
+          setData(d.data || []);
+          setTotal(d.pagination?.total || 0);
+        }
+      })
+      .catch(() => {
+        setLoadError("Failed to load data");
+        setData([]);
+      })
+      .finally(() => setLoading(false));
   };
   useEffect(load, [apiPath, page, search]);
 
@@ -178,6 +195,7 @@ export function DataPage({
           <h1 style={{ fontSize: 28, fontWeight: 600, letterSpacing: "-0.02em", margin: 0 }}>{title}</h1>
           <p style={{ fontSize: 13, color: "#7c7570", marginTop: 3 }}>{total} records</p>
           {subtitle && <p className="storage-hint" style={{ marginTop: 8, maxWidth: 560 }}>{subtitle}</p>}
+          {loadError && <p style={{ marginTop: 8, fontSize: 13, color: "#dc2626" }}>{loadError}</p>}
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           {/* Search */}
