@@ -24,4 +24,11 @@ export const config = {
     windowMs: 15 * 60 * 1000, // 15 minutes
     maxRequests: parseInt(process.env.RATE_LIMIT_MAX || "100"),
   },
+
+  supabase: {
+    url: process.env.SUPABASE_URL || "",
+    serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || "",
+    bucket: process.env.SUPABASE_STORAGE_BUCKET || "municipal-pms",
+    maxUploadBytes: parseInt(process.env.SUPABASE_MAX_UPLOAD_BYTES || "10485760", 10),
+  },
 } as const;

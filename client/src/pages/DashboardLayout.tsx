@@ -29,6 +29,7 @@ function getNav(role: string) {
     { section: "WEBSITE", items: [
       { label: "Content", href: `${p}/website-content/contents`, icon: "🖼" }, { label: "Helpline", href: `${p}/website-content/helpline-numbers`, icon: "📞" },
       { label: "Links", href: `${p}/website-content/links`, icon: "🔗" }, { label: "Officers", href: `${p}/website-content/officers-profile`, icon: "👤" },
+      { label: "Services", href: `${p}/website-content/services`, icon: "🛎" },
     ]},
     { section: "ACCOUNT", items: [
       { label: "Settings", href: `${p}/manage-settings`, icon: "⚙" }, { label: "Audit Logs", href: `${p}/audit-logs`, icon: "📜" }, { label: "Password", href: `${p}/change-password`, icon: "🔑" },
@@ -103,7 +104,7 @@ export function DashboardLayout() {
   const textColor = dark ? "#e0e0e0" : "#1a1614";
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", color: textColor }}>
+    <div className="app-shell" style={{ color: textColor }}>
       {/* Mobile overlay */}
       {mobileOpen && <div onClick={() => setMobileOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 40 }} />}
 
@@ -114,9 +115,9 @@ export function DashboardLayout() {
         <button onClick={toggleDark} style={{ background: "none", border: "none", fontSize: 16, cursor: "pointer" }}>{dark ? "☀" : "🌙"}</button>
       </div>
 
-      <style>{`@media (max-width: 768px) { .mobile-header { display: flex !important; } .sidebar { position: fixed !important; z-index: 50 !important; transform: translateX(${mobileOpen ? "0" : "-100%"}) !important; } .main-content { margin-top: 48px !important; } }`}</style>
-      <nav className="sidebar" style={{ width: collapsed ? 60 : 230, background: sidebarBg, color: "#fef0e7", display: "flex", flexDirection: "column", flexShrink: 0, transition: "all 0.2s", overflowY: "auto", overflowX: "hidden" }}>
-        <div style={{ padding: "14px 12px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <style>{`@media (max-width: 768px) { .mobile-header { display: flex !important; } .sidebar { position: fixed !important; z-index: 50 !important; transform: translateX(${mobileOpen ? "0" : "-100%"}) !important; } }`}</style>
+      <nav className="sidebar" style={{ width: collapsed ? 60 : 230, background: sidebarBg, color: "#fef0e7", transition: "width 0.2s" }}>
+        <div style={{ flexShrink: 0, padding: "14px 12px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           {!collapsed && (
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,240,230,0.9)" }}>{APP_NAME_SHORT}</span>
@@ -129,12 +130,12 @@ export function DashboardLayout() {
           </div>
         </div>
         {!collapsed && user && (
-          <div style={{ padding: "10px 12px", display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ flexShrink: 0, padding: "10px 12px", display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{ width: 28, height: 28, borderRadius: "50%", background: "linear-gradient(135deg, #e05d36, #f0a060)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 600, fontSize: 11, flexShrink: 0 }}>{user.name[0]}</div>
             <div><div style={{ fontSize: 12, fontWeight: 500, color: "rgba(255,240,230,0.85)" }}>{user.name}</div><div style={{ fontSize: 10, color: "rgba(255,240,230,0.35)" }}>{user.role}</div></div>
           </div>
         )}
-        <div style={{ flex: 1, padding: "4px 6px" }}>
+        <div className="app-sidebar-nav">
           {getNav(user?.role || "USER").map((group, gi) => (
             <div key={gi}>
               {group.section && !collapsed && <div style={{ padding: "12px 8px 4px", fontSize: 9, fontWeight: 700, color: "rgba(255,240,230,0.2)", letterSpacing: "0.08em" }}>{group.section}</div>}
@@ -150,13 +151,13 @@ export function DashboardLayout() {
             </div>
           ))}
         </div>
-        <div style={{ padding: "8px 6px", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+        <div className="app-sidebar-footer" style={{ padding: "8px 6px", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
           <button onClick={logout} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "6px 10px", justifyContent: collapsed ? "center" : "flex-start", borderRadius: 6, fontSize: 13, color: "rgba(255,120,100,0.7)", background: "none", border: "none", cursor: "pointer" }}>
             <span>⏻</span>{!collapsed && <span>Sign Out</span>}
           </button>
         </div>
       </nav>
-      <main className="main-content" style={{ flex: 1, padding: "28px 32px", overflow: "auto", background: mainBg }}>
+      <main className="main-content app-main" style={{ padding: "28px 32px", background: mainBg }}>
         <div style={{ maxWidth: 1100, margin: "0 auto" }}><Outlet /></div>
       </main>
     </div>

@@ -1,9 +1,18 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, apiPost, apiPut } from "../lib/api";
+import { FileUploadField } from "../components/FileUploadField";
+import { isImageUrl, type UploadFolder } from "../lib/upload";
 
-interface Col { key: string; h: string; badge?: boolean; prefix?: string; }
-interface AddField { key: string; label: string; type?: string; options?: { v: string; l: string }[]; }
+interface Col { key: string; h: string; badge?: boolean; prefix?: string; link?: boolean; }
+interface AddField {
+  key: string;
+  label: string;
+  type?: "text" | "password" | "select" | "file";
+  options?: { v: string; l: string }[];
+  uploadFolder?: UploadFolder;
+  accept?: string;
+}
 
 const Badge = ({ status }: { status: string }) => {
   const colors: Record<string, [string, string]> = {
@@ -93,13 +102,21 @@ export function DataPage({ title, api: apiPath, columns, addFields, rowLink }: {
             {addFields.map(f => (
               <div key={f.key} style={{ marginBottom: 12 }}>
                 <label style={{ display: "block", fontSize: 11, fontWeight: 500, color: "#7c7570", marginBottom: 4 }}>{f.label}</label>
-                {f.type === "select" ? (
+                {f.type === "file" ? (
+                  <FileUploadField
+                    label=""
+                    value={form[f.key] || ""}
+                    onChange={(url) => setForm((p) => ({ ...p, [f.key]: url }))}
+                    folder={f.uploadFolder || "general"}
+                    accept={f.accept}
+                  />
+                ) : f.type === "select" ? (
                   <select value={form[f.key] || ""} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} style={{ ...inp, appearance: "auto" }}>
                     <option value="">Select</option>
                     {f.options?.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
                   </select>
                 ) : (
-                  <input value={form[f.key] || ""} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} type={f.key === "password" ? "password" : "text"} style={inp} />
+                  <input value={form[f.key] || ""} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} type={f.type === "password" || f.key === "password" ? "password" : "text"} style={inp} />
                 )}
               </div>
             ))}
@@ -126,7 +143,17 @@ export function DataPage({ title, api: apiPath, columns, addFields, rowLink }: {
                 <tr key={row.id || i} onClick={() => rowLink && nav(`${rowLink}/${row.id}`)} style={{ borderBottom: "1px solid rgba(0,0,0,0.04)", cursor: rowLink ? "pointer" : "default" }}>
                   {columns.map(c => {
                     const val = getValue(row, c.key);
-                    return <td key={c.key} style={{ padding: "10px 16px" }}>{c.badge ? <Badge status={val || "—"} /> : (c.prefix ? `${c.prefix}${(val || 0).toLocaleString("en-IN")}` : (val ?? "—"))}</td>;
+                    const display = c.badge ? <Badge status={val || "—"} />
+                      : c.link && val ? (
+                        isImageUrl(String(val)) ? (
+                          <a href={String(val)} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>
+                            <img src={String(val)} alt="" style={{ height: 36, borderRadius: 4, verticalAlign: "middle" }} />
+                          </a>
+                        ) : (
+                          <a href={String(val)} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} style={{ color: "#e05d36", fontSize: 12 }}>View</a>
+                        )
+                      ) : c.prefix ? `${c.prefix}${(val || 0).toLocaleString("en-IN")}` : (val ?? "—");
+                    return <td key={c.key} style={{ padding: "10px 16px" }}>{display}</td>;
                   })}
                   {addFields && (
                     <td style={{ padding: "10px 16px" }}>

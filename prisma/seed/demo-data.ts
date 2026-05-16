@@ -27,14 +27,14 @@ async function main() {
     { firstName: "Deepak", lastName: "Verma", email: "deepak@municipality.gov", mobile: "9876543215", role: "HC" as const },
   ];
 
-  const pw = await hash("Officer@123", 12);
+  const pw = await hash("Change123", 12);
   for (const o of officers) {
     const existing = await prisma.user.findUnique({ where: { email: o.email } });
     if (!existing) {
       await prisma.user.create({ data: { ...o, passwordHash: pw, status: "ACTIVE" } });
     }
   }
-  console.log("Officers created (password: Officer@123)");
+  console.log("Officers created (password: Change123)");
 
   // Create staff records with ward assignments
   const tiUser = await prisma.user.findUnique({ where: { email: "amit@municipality.gov" } });

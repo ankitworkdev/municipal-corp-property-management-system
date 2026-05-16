@@ -37,16 +37,21 @@ export function DisputesPage() {
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
             <thead><tr style={{ borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
-              <th style={th}>Property</th><th style={th}>Subject</th><th style={th}>Filed By</th><th style={th}>Status</th><th style={th}>Actions</th>
+              <th style={th}>Property</th><th style={th}>Subject</th><th style={th}>Filed By</th><th style={th}>Document</th><th style={th}>Status</th><th style={th}>Actions</th>
             </tr></thead>
             <tbody>
-              {loading ? <tr><td colSpan={5} style={{ padding: 48, textAlign: "center", color: "#7c7570" }}>Loading...</td></tr>
-              : data.length === 0 ? <tr><td colSpan={5} style={{ padding: 48, textAlign: "center", color: "#7c7570" }}>No disputes</td></tr>
+              {loading ? <tr><td colSpan={6} style={{ padding: 48, textAlign: "center", color: "#7c7570" }}>Loading...</td></tr>
+              : data.length === 0 ? <tr><td colSpan={6} style={{ padding: 48, textAlign: "center", color: "#7c7570" }}>No disputes</td></tr>
               : data.map((d: any) => (
                 <tr key={d.id} style={{ borderBottom: "1px solid rgba(0,0,0,0.04)" }}>
                   <td style={{ padding: "10px 16px", fontWeight: 500 }}>{d.property?.propertyId || "—"}</td>
                   <td style={{ padding: "10px 16px" }}>{d.subject}</td>
                   <td style={{ padding: "10px 16px" }}>{d.createdBy?.firstName} {d.createdBy?.lastName}</td>
+                  <td style={{ padding: "10px 16px" }}>
+                    {d.supportingDocUrl ? (
+                      <a href={d.supportingDocUrl} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: "#e05d36" }}>View</a>
+                    ) : "—"}
+                  </td>
                   <td style={{ padding: "10px 16px" }}><Badge s={d.status} /></td>
                   <td style={{ padding: "10px 16px" }}>
                     <div style={{ display: "flex", gap: 4 }}>
