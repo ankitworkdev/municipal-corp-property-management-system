@@ -22,7 +22,7 @@ services:
     autoDeploy: true
     # Vite lives in devDependencies; Render omits them unless --include=dev
     buildCommand: npm ci --include=dev && npx prisma generate && npm run build
-    startCommand: npx prisma migrate deploy && npm start
+    startCommand: npx prisma migrate deploy && npm run db:seed:prod && npm start
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV

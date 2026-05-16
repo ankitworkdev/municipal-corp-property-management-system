@@ -44,10 +44,14 @@ import path from "path";
 import { fileURLToPath } from "url";
 if (!config.isDev) {
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
-  const clientDist = path.join(__dirname, "../dist/client");
+  // Compiled server lives in dist/server; Vite output is dist/client (not dist/dist/client)
+  const clientDist = path.join(__dirname, "../client");
   app.use(express.static(clientDist));
-  app.get("*", (req, res) => {
-    res.sendFile(path.join(clientDist, "index.html"));
+  app.get("*", (req, res, next) => {
+    if (req.path.startsWith("/api")) return next();
+    res.sendFile(path.join(clientDist, "index.html"), (err) => {
+      if (err) next(err);
+    });
   });
 }
 
