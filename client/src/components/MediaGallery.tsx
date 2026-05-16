@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../lib/api";
 import { getMediaLimit } from "../lib/media";
-import { fetchUploadStatus, isImageUrl, uploadFiles, type MediaEntityType, type UploadFolder } from "../lib/upload";
+import { fetchUploadStatus, uploadFiles, type MediaEntityType, type UploadFolder } from "../lib/upload";
 import { ImageLightbox } from "./ImageLightbox";
+import { MediaThumb } from "./MediaThumb";
 
 type Attachment = {
   id: string;
@@ -114,27 +115,21 @@ export function MediaGallery({
         </p>
       ) : (
         <div className="media-thumb-grid">
-          {items.map((item) => {
-            const image = isImageUrl(item.url);
-            return (
-              <div key={item.id} className="media-thumb-card">
-                {image ? (
-                  <button type="button" className="media-thumb-btn" onClick={() => setLightbox(item.url)} aria-label="View full size">
-                    <img src={item.url} alt={item.fileName || ""} />
-                  </button>
-                ) : (
-                  <a href={item.url} target="_blank" rel="noreferrer" className="media-doc-link">
-                    PDF
-                  </a>
-                )}
-                {canEdit && (
-                  <button type="button" className="media-thumb-remove" onClick={() => remove(item.id)} aria-label="Remove">
-                    ×
-                  </button>
-                )}
-              </div>
-            );
-          })}
+          {items.map((item) => (
+            <div key={item.id} className="media-thumb-card">
+              <MediaThumb
+                url={item.url}
+                fileName={item.fileName}
+                mimeType={item.mimeType}
+                onImageClick={setLightbox}
+              />
+              {canEdit && (
+                <button type="button" className="media-thumb-remove" onClick={() => remove(item.id)} aria-label="Remove">
+                  ×
+                </button>
+              )}
+            </div>
+          ))}
         </div>
       )}
 
@@ -164,7 +159,7 @@ function UploadToolbar({
           opacity: atLimit ? 0.5 : 1,
         }}
       >
-        {uploading ? "Uploading…" : atLimit ? "Limit reached" : "+ Add files"}
+        {uploading ? "Optimizing & uploading…" : atLimit ? "Limit reached" : "+ Add files"}
         <input
           type="file"
           accept="image/*,application/pdf"

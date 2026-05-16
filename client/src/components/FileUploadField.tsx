@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { uploadFile, type UploadFolder, isImageUrl } from "../lib/upload";
+import { uploadFile, type UploadFolder, isImageUrl, isPdfUrl } from "../lib/upload";
+import { MediaThumb } from "./MediaThumb";
 
 type Props = {
   label: string;
@@ -38,12 +39,14 @@ export function FileUploadField({ label, value, onChange, folder, accept = "imag
         onChange={(e) => handleFile(e.target.files?.[0])}
         style={{ fontSize: 13, width: "100%" }}
       />
-      {uploading && <p style={{ fontSize: 12, color: "#7c7570", marginTop: 4 }}>Uploading…</p>}
+      {uploading && <p style={{ fontSize: 12, color: "#7c7570", marginTop: 4 }}>Optimizing & uploading…</p>}
       {error && <p style={{ fontSize: 12, color: "#dc2626", marginTop: 4 }}>{error}</p>}
       {value && (
-        <div style={{ marginTop: 8 }}>
-          {isImageUrl(value) ? (
-            <img src={value} alt="" style={{ maxWidth: "100%", maxHeight: 120, borderRadius: 8, border: "1px solid rgba(0,0,0,0.08)" }} />
+        <div style={{ marginTop: 8, maxWidth: 160 }}>
+          {isImageUrl(value) || isPdfUrl(value) ? (
+            <div className="media-thumb-card" style={{ aspectRatio: "1", maxHeight: 120 }}>
+              <MediaThumb url={value} />
+            </div>
           ) : (
             <a href={value} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: "#e05d36" }}>
               View uploaded file
