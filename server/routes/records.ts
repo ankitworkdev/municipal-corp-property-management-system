@@ -121,11 +121,16 @@ recordRoutes.get(
   }),
 );
 
+const RESERVED_USER_PATHS = new Set(["officials", "citizens"]);
+
 recordRoutes.get(
   "/users/:id",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req, res, next) => {
     const id = Array.isArray(req.params.id) ? req.params.id[0]! : req.params.id;
+    if (RESERVED_USER_PATHS.has(id)) {
+      return next("route");
+    }
     const me = (req as any).user;
     if (me.id !== id && !["ADMIN", "EO"].includes(me.role)) {
       throw new AppError(403, "Not allowed to view this user");

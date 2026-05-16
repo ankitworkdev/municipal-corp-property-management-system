@@ -35,11 +35,13 @@ app.use("/api", healthRoutes);
 app.use("/api", authRoutes);
 app.use("/api", uploadRoutes);
 app.use("/api", mediaRoutes);
+// CRUD list routes (e.g. GET /users/officials) must register before recordRoutes
+// GET /users/:id or "officials" would be treated as a user id.
+app.use("/api", crudRoutes);
 app.use("/api", recordRoutes);
 app.use("/api", dashboardRoutes);
 app.use("/api", assessmentRoutes);
 app.use("/api", paymentRoutes);
-app.use("/api", crudRoutes);
 
 // Error handling for API routes
 app.use("/api/*", notFoundHandler);
