@@ -82,6 +82,7 @@ crudRoutes.get("/staffs", requireAuth, async (req, res) => {
   ]);
   const formatted = data.map((s: any) => ({
     id: s.id,
+    userId: s.userId,
     name: `${s.user.firstName} ${s.user.lastName}`,
     email: s.user.email,
     role: s.user.role,

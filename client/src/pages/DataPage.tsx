@@ -52,6 +52,7 @@ export function DataPage({
   columns,
   addFields,
   rowLink,
+  rowLinkIdKey = "id",
   subtitle,
   entityPreviewType,
 }: {
@@ -60,6 +61,8 @@ export function DataPage({
   columns: Col[];
   addFields?: AddField[];
   rowLink?: string;
+  /** Field on each row used in `${rowLink}/${row[rowLinkIdKey]}` (e.g. staff → userId). */
+  rowLinkIdKey?: string;
   subtitle?: string;
   entityPreviewType?: MediaEntityType;
 }) {
@@ -97,12 +100,43 @@ export function DataPage({
 
   const handleSave = async () => {
     setSaving(true);
-    if (editItem) {
-      await apiPut(apiPath, { id: editItem.id, ...form });
-    } else {
-      await apiPost(apiPath, form);
+    try {
+      if (editItem) {
+        const hasProfilePhoto = form.profilePhotoUrl !== undefined || form.profilePhotoThumbUrl !== undefined;
+        const userId = editItem.userId || editItem.id;
+        if (hasProfilePhoto && rowLink === "/eo/users" && userId) {
+          const res = await fetch(`/api/users/${userId}`, {
+            method: "PUT",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              firstName: form.firstName ?? editItem.firstName,
+              lastName: form.lastName ?? editItem.lastName,
+              email: form.email ?? editItem.email,
+              mobile: form.mobile ?? editItem.mobile,
+              profilePhotoUrl: form.profilePhotoUrl || null,
+              profilePhotoThumbUrl: form.profilePhotoThumbUrl || null,
+              status: form.status ?? editItem.status,
+              role: form.role ?? editItem.role,
+            }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Save failed");
+        } else {
+          await apiPut(apiPath, { id: editItem.id, ...form });
+        }
+      } else {
+        await apiPost(apiPath, form);
+      }
+      setShowAdd(false);
+      setEditItem(null);
+      setForm({});
+      load();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Save failed");
+    } finally {
+      setSaving(false);
     }
-    setSaving(false); setShowAdd(false); setEditItem(null); setForm({}); load();
   };
 
   const handleDelete = async (id: string) => {
@@ -111,13 +145,24 @@ export function DataPage({
     load();
   };
 
+  const rowHref = (row: any) => (rowLink ? `${rowLink}/${row[rowLinkIdKey] ?? row.id}` : null);
+
   const openEdit = (row: any) => {
     if (!addFields) return;
     const f: Record<string, string> = {};
-    addFields.forEach(af => { f[af.key] = row[af.key] || ""; });
+    addFields.forEach((af) => {
+      f[af.key] = row[af.key] || "";
+    });
+    if (row.profilePhotoThumbUrl) f.profilePhotoThumbUrl = row.profilePhotoThumbUrl;
     setForm(f);
     setEditItem(row);
     setShowAdd(true);
+  };
+
+  const openUserProfile = (row: any, e?: { stopPropagation: () => void }) => {
+    e?.stopPropagation();
+    const href = rowHref(row);
+    if (href) nav(href);
   };
 
   const glass = { background: "rgba(255,255,255,0.72)", backdropFilter: "blur(20px) saturate(180%)", borderRadius: 16, border: "1px solid rgba(255,255,255,0.4)", boxShadow: "0 2px 12px rgba(0,0,0,0.04)" };
@@ -157,9 +202,21 @@ export function DataPage({
                   <FileUploadField
                     label=""
                     value={form[f.key] || ""}
-                    onChange={(url) => setForm((p) => ({ ...p, [f.key]: url }))}
+                    thumbValue={f.key === "profilePhotoUrl" ? form.profilePhotoThumbUrl : undefined}
+                    onChange={(url, thumb) => {
+                      const next: Record<string, string> = { ...form, [f.key]: url };
+                      if (f.key === "profilePhotoUrl") {
+                        next.profilePhotoThumbUrl = thumb || "";
+                      }
+                      setForm(next);
+                    }}
                     folder={f.uploadFolder || "general"}
                     accept={f.accept}
+                    pathEntityId={
+                      f.key === "profilePhotoUrl"
+                        ? editItem?.userId || editItem?.id
+                        : undefined
+                    }
                   />
                 ) : f.type === "select" ? (
                   <select value={form[f.key] || ""} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} style={{ ...inp, appearance: "auto" }}>
@@ -185,13 +242,17 @@ export function DataPage({
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
             <thead><tr style={{ borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
               {columns.map(c => <th key={c.key} style={th}>{c.h}</th>)}
-              {addFields && <th style={th}>Actions</th>}
+              {(addFields || rowLink) && <th style={th}>Actions</th>}
             </tr></thead>
             <tbody>
-              {loading ? <tr><td colSpan={columns.length + (addFields ? 1 : 0)} style={{ padding: 48, textAlign: "center", color: "#7c7570" }}>Loading...</td></tr>
-              : data.length === 0 ? <tr><td colSpan={columns.length + (addFields ? 1 : 0)} style={{ padding: 48, textAlign: "center", color: "#7c7570" }}>📭 No data{addFields ? " — click + Add" : ""}{search ? ` matching "${search}"` : ""}</td></tr>
+              {loading ? <tr><td colSpan={columns.length + (addFields || rowLink ? 1 : 0)} style={{ padding: 48, textAlign: "center", color: "#7c7570" }}>Loading...</td></tr>
+              : data.length === 0 ? <tr><td colSpan={columns.length + (addFields || rowLink ? 1 : 0)} style={{ padding: 48, textAlign: "center", color: "#7c7570" }}>📭 No data{addFields ? " — click + Add" : ""}{search ? ` matching "${search}"` : ""}</td></tr>
               : data.map((row, i) => (
-                <tr key={row.id || i} onClick={() => rowLink && nav(`${rowLink}/${row.id}`)} style={{ borderBottom: "1px solid rgba(0,0,0,0.04)", cursor: rowLink ? "pointer" : "default" }}>
+                <tr
+                  key={row.id || i}
+                  onClick={() => rowHref(row) && nav(rowHref(row)!)}
+                  style={{ borderBottom: "1px solid rgba(0,0,0,0.04)", cursor: rowLink ? "pointer" : "default" }}
+                >
                   {columns.map(c => {
                     const val = getValue(row, c.key);
                     const display = c.type === "avatar" ? (
@@ -221,11 +282,24 @@ export function DataPage({
                       ) : c.prefix ? `${c.prefix}${(val || 0).toLocaleString("en-IN")}` : (val ?? "—");
                     return <td key={c.key} style={{ padding: "10px 16px" }}>{display}</td>;
                   })}
-                  {addFields && (
-                    <td style={{ padding: "10px 16px" }}>
-                      <div style={{ display: "flex", gap: 6 }}>
-                        <button onClick={() => openEdit(row)} style={{ padding: "3px 10px", borderRadius: 6, border: "1px solid rgba(0,0,0,0.08)", background: "rgba(255,255,255,0.8)", fontSize: 12, cursor: "pointer", color: "#3498db" }}>Edit</button>
-                        <button onClick={() => handleDelete(row.id)} style={{ padding: "3px 10px", borderRadius: 6, border: "1px solid rgba(220,38,38,0.2)", background: "rgba(220,38,38,0.05)", fontSize: 12, cursor: "pointer", color: "#dc2626" }}>Delete</button>
+                  {(addFields || rowLink) && (
+                    <td style={{ padding: "10px 16px" }} onClick={(e) => e.stopPropagation()}>
+                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                        {rowLink && (
+                          <button
+                            type="button"
+                            onClick={(e) => openUserProfile(row, e)}
+                            style={{ padding: "3px 10px", borderRadius: 6, border: "1px solid rgba(224,93,54,0.35)", background: "rgba(224,93,54,0.08)", fontSize: 12, cursor: "pointer", color: "#e05d36" }}
+                          >
+                            Profile & photo
+                          </button>
+                        )}
+                        {addFields && (
+                          <>
+                            <button type="button" onClick={() => openEdit(row)} style={{ padding: "3px 10px", borderRadius: 6, border: "1px solid rgba(0,0,0,0.08)", background: "rgba(255,255,255,0.8)", fontSize: 12, cursor: "pointer", color: "#3498db" }}>Edit</button>
+                            <button type="button" onClick={() => handleDelete(row.id)} style={{ padding: "3px 10px", borderRadius: 6, border: "1px solid rgba(220,38,38,0.2)", background: "rgba(220,38,38,0.05)", fontSize: 12, cursor: "pointer", color: "#dc2626" }}>Delete</button>
+                          </>
+                        )}
                       </div>
                     </td>
                   )}
