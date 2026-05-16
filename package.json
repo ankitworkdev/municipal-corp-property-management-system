@@ -10,7 +10,8 @@
     "build": "vite build && tsc -p tsconfig.server.json",
     "start": "node dist/server/index.js",
     "db:migrate": "prisma migrate dev",
-    "db:seed": "tsx prisma/seed/seed.ts",
+    "db:seed": "tsx prisma/seed/full-demo.ts",
+    "db:seed:legacy": "tsx prisma/seed/seed.ts && tsx prisma/seed/demo-data.ts && tsx prisma/seed/add-citizen-passwords.ts",
     "db:seed:prod": "tsx prisma/seed/deploy.ts"
   },
   "dependencies": {

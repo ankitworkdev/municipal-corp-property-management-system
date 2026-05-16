@@ -86,8 +86,9 @@ export function LoginPage() {
                 {loading ? "Signing in..." : "Sign In"}
               </button>
               <p style={{ textAlign: "center", fontSize: 12, color: "#a09890", marginTop: 14 }}>
-                Admin: admin@demo.com / Admin@123<br />
-                Officers: rajesh@municipality.gov / Officer@123
+                All demo accounts use password: Change123<br />
+                Admin: admin@demo.com · Officer: rajesh@municipality.gov<br />
+                Citizen: 7001234501 (mobile login)
               </p>
             </div>
           ) : (

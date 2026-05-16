@@ -86,9 +86,9 @@ async function main() {
     { settingName: "usage_factor", enabled: true, description: "usage factor" },
   ]});
 
-  const pw = await hash("Admin@123", 12);
+  const pw = await hash("Change123", 12);
   await prisma.user.create({ data: { firstName: "Admin", lastName: "User", email: "admin@demo.com", mobile: "9999999999", passwordHash: pw, role: "ADMIN", status: "ACTIVE" } });
-  console.log("Admin: admin@demo.com / Admin@123");
+  console.log("Admin: admin@demo.com / Change123 (prefer: npm run db:seed for full demo)");
   console.log("Seed complete!");
 }
 
