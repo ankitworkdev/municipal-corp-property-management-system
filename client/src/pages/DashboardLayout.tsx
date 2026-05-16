@@ -29,7 +29,7 @@ function getNav(role: string) {
     ]},
     { section: "WEBSITE", items: [
       { label: "Content", href: `${p}/website-content/contents`, icon: "🖼" }, { label: "Helpline", href: `${p}/website-content/helpline-numbers`, icon: "📞" },
-      { label: "Links", href: `${p}/website-content/links`, icon: "🔗" }, { label: "Officers", href: `${p}/website-content/officers-profile`, icon: "👤" },
+      { label: "Links", href: `${p}/website-content/links`, icon: "🔗" }, { label: "Website officers", href: `${p}/website-content/officers-profile`, icon: "👤" },
       { label: "Services", href: `${p}/website-content/services`, icon: "🛎" },
     ]},
     { section: "ACCOUNT", items: [

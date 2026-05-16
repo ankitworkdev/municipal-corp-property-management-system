@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { api } from "../lib/api";
+import { useAuth } from "../lib/auth";
 import { MediaGallery } from "../components/MediaGallery";
+import { ListAvatar } from "../components/ListAvatar";
 
 export function PropertyDetail() {
   const { id } = useParams();
+  const { user } = useAuth();
   const [property, setProperty] = useState<any>(null);
   const [assessments, setAssessments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,6 +34,10 @@ export function PropertyDetail() {
   if (loading) return <p style={{ color: "#7c7570" }}>Loading...</p>;
   if (!property) return <p>Property not found. <Link to="/eo/properties" style={{ color: "#e05d36" }}>Back to list</Link></p>;
 
+  const canEditMedia =
+    !!user &&
+    (user.role !== "USER" || property.ownerId === user.id || property.owner?.id === user.id);
+
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
@@ -45,7 +52,14 @@ export function PropertyDetail() {
         {/* Owner Info */}
         <div style={glass}>
           <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 16, color: "#e05d36" }}>Owner Details</h3>
-          <p style={label}>Owner Name</p><p style={value}>{property.ownerName || "—"}</p>
+          <p style={label}>Owner Name</p>
+          <p style={{ ...value, display: "flex", alignItems: "center", gap: 10 }}>
+            <ListAvatar
+              name={property.ownerName || property.owner?.firstName}
+              imageUrl={property.owner?.profilePhotoThumbUrl || property.owner?.profilePhotoUrl}
+            />
+            {property.ownerName || (property.owner ? `${property.owner.firstName} ${property.owner.lastName}` : "—")}
+          </p>
           <p style={label}>Guardian Name</p><p style={value}>{property.guardianName || "—"}</p>
           <p style={label}>Mobile</p><p style={value}>{property.mobile || "—"}</p>
           <p style={label}>Email</p><p style={value}>{property.email || "—"}</p>
@@ -95,7 +109,13 @@ export function PropertyDetail() {
       </div>
 
       {property.id && (
-        <MediaGallery title="Property photos (up to 5)" entityType="PROPERTY" entityId={property.id} folder="properties" />
+        <MediaGallery
+          title="Property photos & documents (up to 5)"
+          entityType="PROPERTY"
+          entityId={property.id}
+          folder="properties"
+          canEdit={canEditMedia}
+        />
       )}
     </div>
   );
