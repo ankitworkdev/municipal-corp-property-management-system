@@ -1,11 +1,23 @@
 import { Router } from "express";
+import multer from "multer";
 import { prisma } from "../lib/prisma.js";
 import { requireAuth } from "../lib/auth.js";
 import { AppError, asyncHandler } from "../lib/errors.js";
 import { logAudit } from "../lib/audit.js";
-import { MEDIA_ENTITY_TYPES, getMediaLimit } from "../lib/media-entities.js";
+import {
+  MEDIA_ENTITY_TYPES,
+  buildThumbnailPath,
+  getMediaLimit,
+} from "../lib/media-entities.js";
+import { deleteStorageByUrl, uploadStorageBuffer } from "../lib/storage.js";
+import { isStorageEnabled } from "../lib/supabase.js";
 
 export const mediaRoutes = Router();
+
+const thumbUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 512 * 1024 },
+});
 
 mediaRoutes.get(
   "/media/previews",
@@ -50,6 +62,35 @@ mediaRoutes.get(
       orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
     });
     res.json({ success: true, data });
+  }),
+);
+
+mediaRoutes.post(
+  "/media/:id/thumbnail",
+  requireAuth,
+  thumbUpload.single("thumb"),
+  asyncHandler(async (req, res) => {
+    const id = Array.isArray(req.params.id) ? req.params.id[0]! : req.params.id;
+    const file = req.file;
+    if (!file) throw new AppError(400, "thumb file required");
+    const existing = await prisma.mediaAttachment.findUnique({ where: { id } });
+    if (!existing) throw new AppError(404, "Attachment not found");
+
+    if (!isStorageEnabled()) throw new AppError(503, "Storage not configured");
+
+    if (existing.thumbnailUrl) {
+      await deleteStorageByUrl(existing.thumbnailUrl);
+    }
+
+    const thumbPath = buildThumbnailPath(existing.entityType, existing.entityId, file.originalname || "thumb.jpg");
+    const thumbnailUrl = await uploadStorageBuffer(thumbPath, file.buffer, file.mimetype || "image/jpeg");
+
+    const updated = await prisma.mediaAttachment.update({
+      where: { id },
+      data: { thumbnailUrl },
+    });
+
+    res.json({ success: true, data: updated, thumbnailUrl });
   }),
 );
 
@@ -100,7 +141,11 @@ mediaRoutes.delete(
     if (!id) throw new AppError(400, "id query parameter required");
     const existing = await prisma.mediaAttachment.findUnique({ where: { id } });
     if (!existing) throw new AppError(404, "Attachment not found");
+
+    await deleteStorageByUrl(existing.url);
+    await deleteStorageByUrl(existing.thumbnailUrl);
     await prisma.mediaAttachment.delete({ where: { id } });
+
     const user = (req as any).user;
     await logAudit(req, {
       userId: user.id,

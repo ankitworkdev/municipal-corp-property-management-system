@@ -4,7 +4,7 @@ import { compressImageFile } from "./image-compress";
 const LIST_THUMB_EDGE = 160;
 const LIST_THUMB_QUALITY = 0.68;
 
-function dataUrlToFile(dataUrl: string, name: string): File {
+export function dataUrlToFile(dataUrl: string, name: string): File {
   const [header, base64] = dataUrl.split(",");
   const mime = header.match(/:(.*?);/)?.[1] || "image/jpeg";
   const binary = atob(base64);

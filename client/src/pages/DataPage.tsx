@@ -13,6 +13,7 @@ interface Col {
   link?: boolean;
   type?: "avatar" | "entityThumb";
   nameKeys?: string[];
+  avatarImageKeys?: string[];
 }
 interface AddField {
   key: string;
@@ -35,6 +36,15 @@ const Badge = ({ status }: { status: string }) => {
 };
 
 const getValue = (row: any, key: string) => key.split(".").reduce((o: any, k) => o?.[k], row);
+
+function resolveAvatarImage(row: any, keys?: string[]): string | null {
+  const paths = keys?.length ? keys : ["profilePhotoThumbUrl", "profilePhotoUrl"];
+  for (const k of paths) {
+    const v = getValue(row, k);
+    if (v) return String(v);
+  }
+  return null;
+}
 
 export function DataPage({
   title,
@@ -191,7 +201,7 @@ export function DataPage({
                             ? c.nameKeys.map((k) => getValue(row, k)).filter(Boolean).join(" ")
                             : String(val ?? "—")
                         }
-                        imageUrl={row.profilePhotoThumbUrl || row.profilePhotoUrl}
+                        imageUrl={resolveAvatarImage(row, c.avatarImageKeys)}
                       />
                     ) : c.type === "entityThumb" ? (
                       <NameWithAvatar

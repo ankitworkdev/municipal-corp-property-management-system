@@ -78,6 +78,7 @@ export function UserEdit() {
         <FileUploadField
           label="Profile photo"
           value={form.profilePhotoUrl}
+          thumbValue={form.profilePhotoThumbUrl}
           onChange={(url, thumb) =>
             setForm((p) => ({
               ...p,

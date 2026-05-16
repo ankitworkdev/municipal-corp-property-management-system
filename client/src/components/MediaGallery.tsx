@@ -123,7 +123,9 @@ export function MediaGallery({
                 thumbnailUrl={item.thumbnailUrl}
                 fileName={item.fileName}
                 mimeType={item.mimeType}
+                attachmentId={item.id}
                 onImageClick={setLightbox}
+                onThumbnailSaved={load}
               />
               {canEdit && (
                 <button type="button" className="media-thumb-remove" onClick={() => remove(item.id)} aria-label="Remove">

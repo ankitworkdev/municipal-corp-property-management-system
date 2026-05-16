@@ -1,17 +1,27 @@
 import { useState } from "react";
 import { uploadFile, type UploadFolder, isImageUrl, isPdfUrl } from "../lib/upload";
+import { deleteStoredUrls } from "../lib/storage-cleanup";
 import { MediaThumb } from "./MediaThumb";
 
 type Props = {
   label: string;
   value: string;
+  thumbValue?: string;
   onChange: (url: string, thumbnailUrl?: string) => void;
   folder: UploadFolder;
   accept?: string;
   pathEntityId?: string;
 };
 
-export function FileUploadField({ label, value, onChange, folder, accept = "image/*,application/pdf", pathEntityId }: Props) {
+export function FileUploadField({
+  label,
+  value,
+  thumbValue,
+  onChange,
+  folder,
+  accept = "image/*,application/pdf",
+  pathEntityId,
+}: Props) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
 
@@ -20,6 +30,7 @@ export function FileUploadField({ label, value, onChange, folder, accept = "imag
     setError("");
     setUploading(true);
     try {
+      if (value) await deleteStoredUrls(value, thumbValue);
       const result = await uploadFile(file, folder, pathEntityId ? { pathEntityId } : undefined);
       onChange(result.url, result.thumbnailUrl);
     } catch (e) {
@@ -54,7 +65,10 @@ export function FileUploadField({ label, value, onChange, folder, accept = "imag
           )}
           <button
             type="button"
-            onClick={() => onChange("")}
+            onClick={async () => {
+              if (value) await deleteStoredUrls(value, thumbValue);
+              onChange("", undefined);
+            }}
             style={{ display: "block", marginTop: 6, fontSize: 11, color: "#7c7570", background: "none", border: "none", cursor: "pointer", padding: 0 }}
           >
             Remove file

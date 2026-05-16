@@ -8,7 +8,17 @@ export const recordRoutes = Router();
 const propertyInclude = {
   ward: { select: { id: true, name: true } },
   road: { select: { id: true, name: true } },
-  owner: { select: { id: true, firstName: true, lastName: true, mobile: true, email: true, profilePhotoUrl: true } },
+  owner: {
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      mobile: true,
+      email: true,
+      profilePhotoUrl: true,
+      profilePhotoThumbUrl: true,
+    },
+  },
 };
 
 recordRoutes.get(
@@ -16,11 +26,15 @@ recordRoutes.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     const id = Array.isArray(req.params.id) ? req.params.id[0]! : req.params.id;
+    const me = (req as any).user;
     const property = await prisma.property.findFirst({
       where: { OR: [{ id }, { propertyId: id }] },
       include: propertyInclude,
     });
     if (!property) throw new AppError(404, "Property not found");
+    if (me.role === "USER" && property.ownerId !== me.id) {
+      throw new AppError(403, "You can only view your own properties");
+    }
     res.json({ success: true, data: property });
   }),
 );

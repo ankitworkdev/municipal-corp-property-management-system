@@ -99,7 +99,25 @@ crudRoutes.get("/properties", requireAuth, async (req: Request, res: Response) =
   const search = req.query.search as string;
   if (search) where.OR = [{ propertyId: { contains: search } }, { ownerName: { contains: search, mode: "insensitive" } }, { mobile: { contains: search } }];
   const [data, total] = await Promise.all([
-    prisma.property.findMany({ where, skip, take, orderBy: { createdAt: "desc" }, include: { ward: { select: { name: true } }, road: { select: { name: true } } } }),
+    prisma.property.findMany({
+      where,
+      skip,
+      take,
+      orderBy: { createdAt: "desc" },
+      include: {
+        ward: { select: { name: true } },
+        road: { select: { name: true } },
+        owner: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            profilePhotoUrl: true,
+            profilePhotoThumbUrl: true,
+          },
+        },
+      },
+    }),
     prisma.property.count({ where }),
   ]);
   res.json({ success: true, data, pagination: { total, page, pageSize: take, totalPages: Math.ceil(total / take) } });

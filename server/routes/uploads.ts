@@ -6,6 +6,7 @@ import { config } from "../lib/config.js";
 import { AppError, asyncHandler } from "../lib/errors.js";
 import { logAudit } from "../lib/audit.js";
 import { getPublicObjectUrl, getSupabase, isStorageEnabled } from "../lib/supabase.js";
+import { deleteStorageByUrl, fetchStorageBytes, storagePathFromPublicUrl } from "../lib/storage.js";
 import { prisma } from "../lib/prisma.js";
 import {
   MEDIA_ENTITY_TYPES,
@@ -179,6 +180,33 @@ uploadRoutes.post(
     }
     // Prefer single-file uploads with thumb field; multi-upload is legacy without paired thumbs.
     res.json({ success: true, files: results });
+  }),
+);
+
+uploadRoutes.get(
+  "/uploads/blob",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const url = String(req.query.url || "");
+    if (!url || !storagePathFromPublicUrl(url)) {
+      throw new AppError(400, "Valid storage url query parameter required");
+    }
+    const buffer = await fetchStorageBytes(url);
+    const mime = url.toLowerCase().includes(".pdf") ? "application/pdf" : "application/octet-stream";
+    res.setHeader("Content-Type", mime);
+    res.setHeader("Cache-Control", "private, max-age=300");
+    res.send(buffer);
+  }),
+);
+
+uploadRoutes.post(
+  "/uploads/delete-url",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const { url, thumbnailUrl } = req.body as { url?: string; thumbnailUrl?: string };
+    await deleteStorageByUrl(url);
+    await deleteStorageByUrl(thumbnailUrl);
+    res.json({ success: true });
   }),
 );
 

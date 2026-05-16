@@ -8,6 +8,7 @@ import { config } from "../lib/config.js";
 import { validate, loginSchema, citizenLoginSchema, registerSchema, changePasswordSchema } from "../lib/validate.js";
 import { asyncHandler } from "../lib/errors.js";
 import { logAudit } from "../lib/audit.js";
+import { deleteStorageByUrl } from "../lib/storage.js";
 
 export const authRoutes = Router();
 
@@ -103,6 +104,27 @@ authRoutes.patch("/profile", requireAuth, asyncHandler(async (req, res) => {
     data.profilePhotoThumbUrl = null;
   }
 
+  const current = await prisma.user.findUnique({
+    where: { id: session.id },
+    select: { profilePhotoUrl: true, profilePhotoThumbUrl: true },
+  });
+  if (current && profilePhotoUrl !== undefined) {
+    const nextPhoto = profilePhotoUrl ? String(profilePhotoUrl) : null;
+    const nextThumb = profilePhotoThumbUrl !== undefined
+      ? (profilePhotoThumbUrl ? String(profilePhotoThumbUrl) : null)
+      : current.profilePhotoThumbUrl;
+    if (current.profilePhotoUrl && current.profilePhotoUrl !== nextPhoto) {
+      await deleteStorageByUrl(current.profilePhotoUrl);
+    }
+    if (current.profilePhotoThumbUrl && current.profilePhotoThumbUrl !== nextThumb) {
+      await deleteStorageByUrl(current.profilePhotoThumbUrl);
+    }
+    if (!nextPhoto) {
+      await deleteStorageByUrl(current.profilePhotoUrl);
+      await deleteStorageByUrl(current.profilePhotoThumbUrl);
+    }
+  }
+
   const updated = await prisma.user.update({
     where: { id: session.id },
     data,
@@ -169,6 +191,25 @@ authRoutes.put("/users/:id", requireAuth, asyncHandler(async (req, res) => {
   if (profilePhotoUrl === null || profilePhotoUrl === "") data.profilePhotoThumbUrl = null;
   if (status !== undefined && ["ADMIN", "EO"].includes(session.role)) data.status = status as UserStatus;
   if (role !== undefined && ["ADMIN", "EO"].includes(session.role)) data.role = role as UserRole;
+
+  const current = await prisma.user.findUnique({
+    where: { id },
+    select: { profilePhotoUrl: true, profilePhotoThumbUrl: true },
+  });
+  if (current && profilePhotoUrl !== undefined) {
+    const nextPhoto = profilePhotoUrl || null;
+    const nextThumb = profilePhotoThumbUrl !== undefined ? profilePhotoThumbUrl || null : current.profilePhotoThumbUrl;
+    if (current.profilePhotoUrl && current.profilePhotoUrl !== nextPhoto) {
+      await deleteStorageByUrl(current.profilePhotoUrl);
+    }
+    if (current.profilePhotoThumbUrl && current.profilePhotoThumbUrl !== nextThumb) {
+      await deleteStorageByUrl(current.profilePhotoThumbUrl);
+    }
+    if (!nextPhoto) {
+      await deleteStorageByUrl(current.profilePhotoUrl);
+      await deleteStorageByUrl(current.profilePhotoThumbUrl);
+    }
+  }
 
   const updated = await prisma.user.update({
     where: { id },
