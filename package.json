@@ -8,6 +8,7 @@
     "dev:server": "tsx watch server/index.ts",
     "dev:client": "vite --host 0.0.0.0 --port 5173",
     "build": "vite build && tsc -p tsconfig.server.json",
+    "ci": "prisma generate && npm run build && tsc -p tsconfig.server.json --noEmit && tsc -p tsconfig.json --noEmit",
     "start": "node dist/server/index.js",
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed/full-demo.ts",

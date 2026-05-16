@@ -27,7 +27,7 @@ export function AssessmentDetail() {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 24 }}>
-        <motionAssessmentDetailHeader assessment={assessment} prop={prop} />
+        <AssessmentHeader assessment={assessment} prop={prop} />
         <Link to="/eo/manage-form" style={{ fontSize: 13, color: "#e05d36" }}>← Back</Link>
       </div>
 
@@ -52,7 +52,7 @@ export function AssessmentDetail() {
   );
 }
 
-function motionAssessmentDetailHeader({ assessment, prop }: { assessment: any; prop: any }) {
+function AssessmentHeader({ assessment, prop }: { assessment: any; prop: any }) {
   return (
     <div>
       <h1 style={{ fontSize: 28, fontWeight: 600, margin: 0 }}>Assessment {assessment.assessmentYear?.year}</h1>

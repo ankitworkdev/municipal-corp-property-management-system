@@ -1,0 +1,68 @@
+# CI on every PR to main; deploy to Render production only after CI passes on main.
+#
+# Required GitHub secret (repo → Settings → Secrets → Actions):
+#   RENDER_DEPLOY_HOOK_URL — from Render Dashboard → municipal-pms → Settings → Deploy Hook
+#
+# Optional: enable branch protection on main requiring this workflow to pass before merge.
+
+name: CI/CD
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-cd-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: Build & typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --include=dev
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Build client and server
+        run: npm run build
+
+      - name: Typecheck server
+        run: npx tsc -p tsconfig.server.json --noEmit
+
+      - name: Typecheck client
+        run: npx tsc -p tsconfig.json --noEmit
+
+  deploy:
+    name: Deploy to Render (production)
+    needs: ci
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Trigger Render deploy
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
+            echo "::error::RENDER_DEPLOY_HOOK_URL is not set in GitHub Actions secrets."
+            echo "Create a Deploy Hook in Render (Settings → Deploy Hook) and add the URL as a repository secret."
+            echo "Until then, use Manual Deploy in the Render dashboard or fix the Render GitHub integration."
+            exit 1
+          fi
+          echo "Triggering Render production deploy..."
+          curl -fsSL -X POST "$RENDER_DEPLOY_HOOK_URL"
+          echo "Deploy hook accepted."

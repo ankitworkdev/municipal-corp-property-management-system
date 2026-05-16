@@ -19,6 +19,7 @@ services:
     plan: free
     region: oregon
     branch: main
+    # Git push to main should deploy. If webhooks fail, use GitHub Actions + RENDER_DEPLOY_HOOK_URL (see .github/workflows/ci-cd.yml).
     autoDeploy: true
     # Vite lives in devDependencies; Render omits them unless --include=dev
     buildCommand: npm ci --include=dev && npx prisma generate && npm run build

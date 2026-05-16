@@ -98,7 +98,7 @@ export function MediaGallery({
       </div>
 
       {canEdit && storageOn && (
-        <motionToolbar canEdit={canEdit} storageOn={storageOn} uploading={uploading} atLimit={atLimit} entityId={entityId} onPickFiles={onPickFiles} />
+        <UploadToolbar uploading={uploading} atLimit={atLimit} entityId={entityId} onPickFiles={onPickFiles} />
       )}
 
       {!storageOn && (
@@ -143,14 +143,12 @@ export function MediaGallery({
   );
 }
 
-function motionToolbar({
+function UploadToolbar({
   uploading,
   atLimit,
   entityId,
   onPickFiles,
 }: {
-  canEdit: boolean;
-  storageOn: boolean;
   uploading: boolean;
   atLimit: boolean;
   entityId: string;
