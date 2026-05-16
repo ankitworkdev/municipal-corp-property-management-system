@@ -139,8 +139,12 @@ export function DashboardLayout() {
         </div>
         {!collapsed && user && (
           <div style={{ flexShrink: 0, padding: "10px 12px", display: "flex", alignItems: "center", gap: 8 }}>
-            {user.profilePhotoUrl ? (
-              <img src={user.profilePhotoUrl} alt="" style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+            {user.profilePhotoUrl || user.profilePhotoThumbUrl ? (
+              <img
+                src={user.profilePhotoThumbUrl || user.profilePhotoUrl || ""}
+                alt=""
+                style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
+              />
             ) : (
               <div style={{ width: 28, height: 28, borderRadius: "50%", background: "linear-gradient(135deg, #e05d36, #f0a060)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 600, fontSize: 11, flexShrink: 0 }}>{user.name[0]}</div>
             )}

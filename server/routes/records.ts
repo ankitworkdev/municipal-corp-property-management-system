@@ -127,6 +127,7 @@ recordRoutes.get(
         role: true,
         status: true,
         profilePhotoUrl: true,
+        profilePhotoThumbUrl: true,
         createdAt: true,
       },
     });

@@ -11,6 +11,7 @@ import {
   MEDIA_ENTITY_TYPES,
   UPLOAD_FOLDERS,
   buildStoragePath,
+  buildThumbnailPath,
   getMediaLimit,
 } from "../lib/media-entities.js";
 
@@ -38,6 +39,17 @@ function safeFilename(original: string): string {
   return base.slice(0, 120) || "file";
 }
 
+async function uploadBuffer(path: string, buffer: Buffer, contentType: string) {
+  const supabase = getSupabase();
+  if (!supabase) throw new AppError(503, "Storage client unavailable");
+  const { error } = await supabase.storage.from(config.supabase.bucket).upload(path, buffer, {
+    contentType,
+    upsert: false,
+  });
+  if (error) throw new AppError(500, `Upload failed: ${error.message}`);
+  return getPublicObjectUrl(path);
+}
+
 async function storeFile(
   req: Request,
   file: Express.Multer.File,
@@ -45,6 +57,7 @@ async function storeFile(
   entityType?: string,
   entityId?: string,
   pathEntityId?: string,
+  thumbFile?: Express.Multer.File,
 ) {
   if (!isStorageEnabled()) {
     throw new AppError(503, "File storage is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.");
@@ -62,14 +75,16 @@ async function storeFile(
   }
 
   const storagePath = buildStoragePath(folder, safeFilename(file.originalname), pathEntityId || entityId);
-  const { error } = await supabase.storage.from(config.supabase.bucket).upload(storagePath, file.buffer, {
-    contentType: file.mimetype,
-    upsert: false,
-  });
-  if (error) throw new AppError(500, `Upload failed: ${error.message}`);
-
-  const url = getPublicObjectUrl(storagePath);
+  const url = await uploadBuffer(storagePath, file.buffer, file.mimetype);
   const user = (req as Request & { user: { id: string; name: string; email: string | null; role: string } }).user;
+
+  let thumbnailUrl: string | undefined;
+  if (thumbFile) {
+    const thumbPath = entityType && entityId
+      ? buildThumbnailPath(entityType, entityId, thumbFile.originalname)
+      : buildStoragePath("thumbnails", thumbFile.originalname, pathEntityId || entityId);
+    thumbnailUrl = await uploadBuffer(thumbPath, thumbFile.buffer, thumbFile.mimetype || "image/jpeg");
+  }
 
   let attachmentId: string | undefined;
   if (entityType && entityId && MEDIA_ENTITY_TYPES.has(entityType)) {
@@ -78,6 +93,7 @@ async function storeFile(
         entityType,
         entityId,
         url,
+        thumbnailUrl: thumbnailUrl || null,
         fileName: file.originalname,
         mimeType: file.mimetype,
         sortOrder: attachmentCount,
@@ -97,7 +113,15 @@ async function storeFile(
     details: `${folder}/${storagePath}`,
   });
 
-  return { url, path: storagePath, bucket: config.supabase.bucket, mimeType: file.mimetype, size: file.size, attachmentId };
+  return {
+    url,
+    thumbnailUrl,
+    path: storagePath,
+    bucket: config.supabase.bucket,
+    mimeType: file.mimetype,
+    size: file.size,
+    attachmentId,
+  };
 }
 
 function parseUploadMeta(req: Request) {
@@ -114,15 +138,22 @@ function parseUploadMeta(req: Request) {
   return { folder, entityType, entityId, pathEntityId };
 }
 
+const uploadFields = upload.fields([
+  { name: "file", maxCount: 1 },
+  { name: "thumb", maxCount: 1 },
+]);
+
 uploadRoutes.post(
   "/uploads",
   requireAuth,
-  upload.single("file"),
+  uploadFields,
   asyncHandler(async (req, res) => {
-    const file = req.file;
+    const files = req.files as { file?: Express.Multer.File[]; thumb?: Express.Multer.File[] };
+    const file = files?.file?.[0];
     if (!file) throw new AppError(400, "No file uploaded. Use form field name 'file'.");
+    const thumb = files?.thumb?.[0];
     const { folder, entityType, entityId, pathEntityId } = parseUploadMeta(req);
-    const result = await storeFile(req, file, folder, entityType, entityId, pathEntityId);
+    const result = await storeFile(req, file, folder, entityType, entityId, pathEntityId, thumb);
     res.json({ success: true, ...result });
   }),
 );
@@ -146,6 +177,7 @@ uploadRoutes.post(
     for (const file of files) {
       results.push(await storeFile(req, file, folder, entityType, entityId, pathEntityId));
     }
+    // Prefer single-file uploads with thumb field; multi-upload is legacy without paired thumbs.
     res.json({ success: true, files: results });
   }),
 );

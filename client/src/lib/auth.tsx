@@ -9,6 +9,7 @@ interface User {
   role: string;
   mobile: string;
   profilePhotoUrl?: string | null;
+  profilePhotoThumbUrl?: string | null;
 }
 
 interface AuthContextType {

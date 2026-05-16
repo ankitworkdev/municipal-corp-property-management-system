@@ -5,7 +5,7 @@ import { MediaThumb } from "./MediaThumb";
 type Props = {
   label: string;
   value: string;
-  onChange: (url: string) => void;
+  onChange: (url: string, thumbnailUrl?: string) => void;
   folder: UploadFolder;
   accept?: string;
   pathEntityId?: string;
@@ -20,8 +20,8 @@ export function FileUploadField({ label, value, onChange, folder, accept = "imag
     setError("");
     setUploading(true);
     try {
-      const url = await uploadFile(file, folder, pathEntityId ? { pathEntityId } : undefined);
-      onChange(url);
+      const result = await uploadFile(file, folder, pathEntityId ? { pathEntityId } : undefined);
+      onChange(result.url, result.thumbnailUrl);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Upload failed");
     } finally {
@@ -42,9 +42,9 @@ export function FileUploadField({ label, value, onChange, folder, accept = "imag
       {uploading && <p style={{ fontSize: 12, color: "#7c7570", marginTop: 4 }}>Optimizing & uploading…</p>}
       {error && <p style={{ fontSize: 12, color: "#dc2626", marginTop: 4 }}>{error}</p>}
       {value && (
-        <div style={{ marginTop: 8, maxWidth: 160 }}>
+        <div style={{ marginTop: 8, maxWidth: 200 }}>
           {isImageUrl(value) || isPdfUrl(value) ? (
-            <div className="media-thumb-card" style={{ aspectRatio: "1", maxHeight: 120 }}>
+            <div className="media-thumb-card media-thumb-card--form">
               <MediaThumb url={value} />
             </div>
           ) : (

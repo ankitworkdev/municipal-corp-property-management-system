@@ -55,6 +55,7 @@ authRoutes.get("/me", async (req, res) => {
       mobile: true,
       role: true,
       profilePhotoUrl: true,
+      profilePhotoThumbUrl: true,
     },
   });
   if (!dbUser) return res.status(401).json({ user: null });
@@ -68,13 +69,14 @@ authRoutes.get("/me", async (req, res) => {
       mobile: dbUser.mobile,
       role: dbUser.role,
       profilePhotoUrl: dbUser.profilePhotoUrl,
+      profilePhotoThumbUrl: dbUser.profilePhotoThumbUrl,
     },
   });
 });
 
 authRoutes.patch("/profile", requireAuth, asyncHandler(async (req, res) => {
   const session = (req as any).user;
-  const { firstName, lastName, mobile, email, profilePhotoUrl } = req.body;
+  const { firstName, lastName, mobile, email, profilePhotoUrl, profilePhotoThumbUrl } = req.body;
   const data: Record<string, string | null> = {};
   if (firstName !== undefined) data.firstName = String(firstName).trim();
   if (lastName !== undefined) data.lastName = String(lastName).trim();
@@ -94,6 +96,12 @@ authRoutes.patch("/profile", requireAuth, asyncHandler(async (req, res) => {
     data.email = e;
   }
   if (profilePhotoUrl !== undefined) data.profilePhotoUrl = profilePhotoUrl ? String(profilePhotoUrl) : null;
+  if (profilePhotoThumbUrl !== undefined) {
+    data.profilePhotoThumbUrl = profilePhotoThumbUrl ? String(profilePhotoThumbUrl) : null;
+  }
+  if (profilePhotoUrl === null || profilePhotoUrl === "") {
+    data.profilePhotoThumbUrl = null;
+  }
 
   const updated = await prisma.user.update({
     where: { id: session.id },
@@ -106,6 +114,7 @@ authRoutes.patch("/profile", requireAuth, asyncHandler(async (req, res) => {
       mobile: true,
       role: true,
       profilePhotoUrl: true,
+      profilePhotoThumbUrl: true,
     },
   });
 
@@ -129,6 +138,7 @@ authRoutes.patch("/profile", requireAuth, asyncHandler(async (req, res) => {
       mobile: updated.mobile,
       role: updated.role,
       profilePhotoUrl: updated.profilePhotoUrl,
+      profilePhotoThumbUrl: updated.profilePhotoThumbUrl,
     },
   });
 }));
@@ -139,13 +149,14 @@ authRoutes.put("/users/:id", requireAuth, asyncHandler(async (req, res) => {
   if (session.id !== id && !["ADMIN", "EO"].includes(session.role)) {
     return res.status(403).json({ error: "Not allowed" });
   }
-  const { firstName, lastName, mobile, email, profilePhotoUrl, status, role } = req.body;
+  const { firstName, lastName, mobile, email, profilePhotoUrl, profilePhotoThumbUrl, status, role } = req.body;
   const data: {
     firstName?: string;
     lastName?: string;
     mobile?: string;
     email?: string | null;
     profilePhotoUrl?: string | null;
+    profilePhotoThumbUrl?: string | null;
     status?: UserStatus;
     role?: UserRole;
   } = {};
@@ -154,6 +165,8 @@ authRoutes.put("/users/:id", requireAuth, asyncHandler(async (req, res) => {
   if (mobile !== undefined) data.mobile = String(mobile).trim();
   if (email !== undefined) data.email = email ? String(email).trim() : null;
   if (profilePhotoUrl !== undefined) data.profilePhotoUrl = profilePhotoUrl || null;
+  if (profilePhotoThumbUrl !== undefined) data.profilePhotoThumbUrl = profilePhotoThumbUrl || null;
+  if (profilePhotoUrl === null || profilePhotoUrl === "") data.profilePhotoThumbUrl = null;
   if (status !== undefined && ["ADMIN", "EO"].includes(session.role)) data.status = status as UserStatus;
   if (role !== undefined && ["ADMIN", "EO"].includes(session.role)) data.role = role as UserRole;
 
@@ -169,6 +182,7 @@ authRoutes.put("/users/:id", requireAuth, asyncHandler(async (req, res) => {
       role: true,
       status: true,
       profilePhotoUrl: true,
+      profilePhotoThumbUrl: true,
     },
   });
 

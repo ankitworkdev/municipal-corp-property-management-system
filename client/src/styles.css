@@ -269,9 +269,14 @@ html.app-dashboard body {
 /* Media gallery & lightbox */
 .media-thumb-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: 12px;
   margin-top: 12px;
+}
+.media-thumb-card--form {
+  aspect-ratio: 1;
+  max-width: 140px;
+  max-height: 140px;
 }
 .media-thumb-card {
   position: relative;
@@ -356,6 +361,11 @@ html.app-dashboard body {
   to {
     background-position-x: -200%;
   }
+}
+
+.list-avatar-img,
+.list-avatar-fallback {
+  vertical-align: middle;
 }
 .media-pdf-fallback {
   flex-direction: column;
