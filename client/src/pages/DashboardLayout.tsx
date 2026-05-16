@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import { APP_NAME_SHORT } from "../lib/branding";
@@ -11,7 +11,8 @@ function getNav(role: string) {
     { section: null, items: [{ label: "Dashboard", href: p, icon: "◻" }, { label: "Reporting", href: `${p}/reporting`, icon: "📊" }] },
     { section: "OPERATIONS", items: [
       { label: "Manage Forms", href: `${p}/manage-form`, icon: "📋" }, { label: "New Assessment", href: `${p}/new-assessment`, icon: "➕" },
-      { label: "Properties", href: `${p}/properties`, icon: "🏠" }, { label: "Payments", href: `${p}/payment-detail`, icon: "💰" },
+      { label: "Properties", href: `${p}/properties`, icon: "🏠" }, { label: "Demands", href: `${p}/demands`, icon: "📄" },
+      { label: "Payments", href: `${p}/payment-detail`, icon: "💰" },
       { label: "Update Payment", href: `${p}/update-payment`, icon: "💳" }, { label: "Disputes", href: `${p}/manage-dispute`, icon: "⚠" },
       { label: "Grievances", href: `${p}/manage-grievances`, icon: "📩" },
     ]},
@@ -32,6 +33,7 @@ function getNav(role: string) {
       { label: "Services", href: `${p}/website-content/services`, icon: "🛎" },
     ]},
     { section: "ACCOUNT", items: [
+      { label: "My Profile", href: `${p}/my-profile`, icon: "👤" },
       { label: "Settings", href: `${p}/manage-settings`, icon: "⚙" }, { label: "Audit Logs", href: `${p}/audit-logs`, icon: "📜" }, { label: "Password", href: `${p}/change-password`, icon: "🔑" },
     ]},
   ];
@@ -47,7 +49,7 @@ function getNav(role: string) {
       { label: "Update Payment", href: `${p}/update-payment`, icon: "💳" },
     ]},
     { section: "USERS", items: [{ label: "Citizens", href: `${p}/citizen-role`, icon: "👥" }] },
-    { section: "ACCOUNT", items: [{ label: "Password", href: `${p}/change-password`, icon: "🔑" }] },
+    { section: "ACCOUNT", items: [{ label: "My Profile", href: `${p}/my-profile`, icon: "👤" }, { label: "Password", href: `${p}/change-password`, icon: "🔑" }] },
   ];
 
   if (role === "TI") return [
@@ -56,19 +58,20 @@ function getNav(role: string) {
       { label: "Manage Forms", href: `${p}/manage-form`, icon: "📋" }, { label: "New Assessment", href: `${p}/new-assessment`, icon: "➕" },
       { label: "Properties", href: `${p}/properties`, icon: "🏠" }, { label: "Update Payment", href: `${p}/update-payment`, icon: "💳" },
     ]},
-    { section: "ACCOUNT", items: [{ label: "Password", href: `${p}/change-password`, icon: "🔑" }] },
+    { section: "ACCOUNT", items: [{ label: "My Profile", href: `${p}/my-profile`, icon: "👤" }, { label: "Password", href: `${p}/change-password`, icon: "🔑" }] },
   ];
 
   if (role === "GO") return [
     { section: null, items: [{ label: "Dashboard", href: p, icon: "◻" }] },
     { section: "OPERATIONS", items: [{ label: "Grievances", href: `${p}/manage-grievances`, icon: "📩" }] },
-    { section: "ACCOUNT", items: [{ label: "Password", href: `${p}/change-password`, icon: "🔑" }] },
+    { section: "ACCOUNT", items: [{ label: "My Profile", href: `${p}/my-profile`, icon: "👤" }, { label: "Password", href: `${p}/change-password`, icon: "🔑" }] },
   ];
 
   // USER (citizen)
   return [
     { section: null, items: [{ label: "Dashboard", href: p, icon: "◻" }] },
     { section: "MY ACCOUNT", items: [
+      { label: "My Profile", href: `${p}/my-profile`, icon: "👤" },
       { label: "My Properties", href: `${p}/properties`, icon: "🏠" },
       { label: "New Assessment", href: `${p}/new-assessment`, icon: "➕" },
       { label: "Password", href: `${p}/change-password`, icon: "🔑" },
@@ -83,6 +86,11 @@ export function DashboardLayout() {
   const [pending, setPending] = useState(0);
   const [dark, setDark] = useState(false);
   const location = useLocation();
+
+  useEffect(() => {
+    document.documentElement.classList.add("app-dashboard");
+    return () => document.documentElement.classList.remove("app-dashboard");
+  }, []);
 
   // Fetch pending count
   useState(() => {
@@ -131,7 +139,11 @@ export function DashboardLayout() {
         </div>
         {!collapsed && user && (
           <div style={{ flexShrink: 0, padding: "10px 12px", display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ width: 28, height: 28, borderRadius: "50%", background: "linear-gradient(135deg, #e05d36, #f0a060)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 600, fontSize: 11, flexShrink: 0 }}>{user.name[0]}</div>
+            {user.profilePhotoUrl ? (
+              <img src={user.profilePhotoUrl} alt="" style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+            ) : (
+              <div style={{ width: 28, height: 28, borderRadius: "50%", background: "linear-gradient(135deg, #e05d36, #f0a060)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 600, fontSize: 11, flexShrink: 0 }}>{user.name[0]}</div>
+            )}
             <div><div style={{ fontSize: 12, fontWeight: 500, color: "rgba(255,240,230,0.85)" }}>{user.name}</div><div style={{ fontSize: 10, color: "rgba(255,240,230,0.35)" }}>{user.role}</div></div>
           </div>
         )}

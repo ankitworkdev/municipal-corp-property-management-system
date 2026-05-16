@@ -124,9 +124,10 @@ model User {
   lastName      String     @map("last_name")
   email         String?    @unique
   mobile        String     @unique
-  passwordHash  String?    @map("password_hash")
-  role          UserRole   @default(USER)
-  status        UserStatus @default(ACTIVE)
+  passwordHash      String?    @map("password_hash")
+  profilePhotoUrl   String?    @map("profile_photo_url")
+  role              UserRole   @default(USER)
+  status            UserStatus @default(ACTIVE)
   createdAt     DateTime   @default(now()) @map("created_at")
   updatedAt     DateTime   @updatedAt @map("updated_at")
 
@@ -573,6 +574,22 @@ model WebsiteService {
   sortOrder    Int     @default(0) @map("sort_order")
 
   @@map("website_services")
+}
+
+model MediaAttachment {
+  id           String   @id @default(cuid())
+  entityType   String   @map("entity_type")
+  entityId     String   @map("entity_id")
+  url          String
+  fileName     String?  @map("file_name")
+  mimeType     String?  @map("mime_type")
+  caption      String?
+  sortOrder    Int      @default(0) @map("sort_order")
+  uploadedById String?  @map("uploaded_by_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([entityType, entityId])
+  @@map("media_attachments")
 }
 
 model AuditLog {

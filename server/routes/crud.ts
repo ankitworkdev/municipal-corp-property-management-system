@@ -135,6 +135,19 @@ crudRoutes.post("/properties", requireAuth, async (req: Request, res: Response) 
   }
 });
 
+crud("/demands", prisma.demand, {
+  orderBy: { createdAt: "desc" },
+  searchFields: ["demandId", "status"],
+  include: {
+    assessment: {
+      include: {
+        property: { select: { id: true, propertyId: true, ownerName: true } },
+        assessmentYear: { select: { year: true } },
+      },
+    },
+  },
+});
+
 // Disputes & Grievances
 crud("/disputes", prisma.dispute, { orderBy: { createdAt: "desc" }, include: { property: { select: { propertyId: true, ownerName: true } }, createdBy: { select: { firstName: true, lastName: true } } } });
 crud("/grievances", prisma.grievance, { orderBy: { createdAt: "desc" }, include: { user: { select: { firstName: true, lastName: true, mobile: true } } } });

@@ -27,7 +27,7 @@ const Badge = ({ status }: { status: string }) => {
 
 const getValue = (row: any, key: string) => key.split(".").reduce((o: any, k) => o?.[k], row);
 
-export function DataPage({ title, api: apiPath, columns, addFields, rowLink }: { title: string; api: string; columns: Col[]; addFields?: AddField[]; rowLink?: string }) {
+export function DataPage({ title, api: apiPath, columns, addFields, rowLink, subtitle }: { title: string; api: string; columns: Col[]; addFields?: AddField[]; rowLink?: string; subtitle?: string }) {
   const [data, setData] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
   const nav = useNavigate();
@@ -38,6 +38,7 @@ export function DataPage({ title, api: apiPath, columns, addFields, rowLink }: {
   const [editItem, setEditItem] = useState<any>(null);
   const [form, setForm] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const hasFileFields = addFields?.some((f) => f.type === "file");
 
   const load = () => {
     setLoading(true);
@@ -83,6 +84,7 @@ export function DataPage({ title, api: apiPath, columns, addFields, rowLink }: {
         <div>
           <h1 style={{ fontSize: 28, fontWeight: 600, letterSpacing: "-0.02em", margin: 0 }}>{title}</h1>
           <p style={{ fontSize: 13, color: "#7c7570", marginTop: 3 }}>{total} records</p>
+          {subtitle && <p className="storage-hint" style={{ marginTop: 8, maxWidth: 560 }}>{subtitle}</p>}
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           {/* Search */}
@@ -97,8 +99,9 @@ export function DataPage({ title, api: apiPath, columns, addFields, rowLink }: {
       {/* Add/Edit Modal */}
       {showAdd && addFields && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.3)", backdropFilter: "blur(4px)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 100 }} onClick={e => e.target === e.currentTarget && (setShowAdd(false), setEditItem(null))}>
-          <div style={{ ...glass, background: "rgba(255,255,255,0.95)", width: 420, padding: 28 }}>
-            <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 16 }}>{editItem ? "Edit" : "Add"} {title.replace(/s$/, "")}</h2>
+          <div className={hasFileFields ? "modal modal--media" : "modal"} style={{ ...glass, background: "rgba(255,255,255,0.95)", width: hasFileFields ? 520 : 420, padding: 28 }}>
+            <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>{editItem ? "Edit" : "Add"} {title.replace(/s$/, "")}</h2>
+            {hasFileFields && <p style={{ fontSize: 12, color: "#7c7570", marginBottom: 16 }}>Choose a file in the field below to upload an image or PDF.</p>}
             {addFields.map(f => (
               <div key={f.key} style={{ marginBottom: 12 }}>
                 <label style={{ display: "block", fontSize: 11, fontWeight: 500, color: "#7c7570", marginBottom: 4 }}>{f.label}</label>

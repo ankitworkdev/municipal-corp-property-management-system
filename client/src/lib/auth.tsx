@@ -3,9 +3,12 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 interface User {
   id: string;
   name: string;
+  firstName?: string;
+  lastName?: string;
   email: string | null;
   role: string;
   mobile: string;
+  profilePhotoUrl?: string | null;
 }
 
 interface AuthContextType {

@@ -710,6 +710,52 @@ async function seedAuditLogs(admin: { id: string; email: string | null; firstNam
   console.log("Audit log samples created");
 }
 
+async function seedMediaDemo(adminId: string) {
+  if ((await prisma.mediaAttachment.count()) > 0) return;
+
+  const placeholder = (seed: string, w = 480, h = 360) =>
+    `https://picsum.photos/seed/${encodeURIComponent(seed)}/${w}/${h}.jpg`;
+
+  await prisma.user.update({
+    where: { id: adminId },
+    data: { profilePhotoUrl: placeholder("admin-profile", 200, 200) },
+  });
+
+  const properties = await prisma.property.findMany({ take: 3, orderBy: { propertyId: "asc" } });
+  for (const prop of properties) {
+    for (let i = 0; i < 2; i++) {
+      await prisma.mediaAttachment.create({
+        data: {
+          entityType: "PROPERTY",
+          entityId: prop.id,
+          url: placeholder(`property-${prop.propertyId}-${i}`),
+          fileName: `property-${prop.propertyId}-${i + 1}.jpg`,
+          mimeType: "image/jpeg",
+          sortOrder: i,
+          uploadedById: adminId,
+        },
+      });
+    }
+  }
+
+  const demands = await prisma.demand.findMany({ take: 2, orderBy: { createdAt: "asc" } });
+  for (const demand of demands) {
+    await prisma.mediaAttachment.create({
+      data: {
+        entityType: "DEMAND",
+        entityId: demand.id,
+        url: placeholder(`demand-${demand.demandId}`),
+        fileName: `demand-${demand.demandId}.jpg`,
+        mimeType: "image/jpeg",
+        sortOrder: 0,
+        uploadedById: adminId,
+      },
+    });
+  }
+
+  console.log("Sample media attachments seeded (placeholder images)");
+}
+
 async function main() {
   console.log(`\n=== Full demo seed (password: ${DEMO_PASSWORD}) ===\n`);
   const passwordHash = await hash(DEMO_PASSWORD, 12);
@@ -719,6 +765,7 @@ async function main() {
   await seedTransactional(ay.id, citizens, admin);
   await seedCms();
   await seedAuditLogs(admin);
+  await seedMediaDemo(admin.id);
 
   await prisma.user.updateMany({ data: { passwordHash } });
   console.log("All user passwords synced to", DEMO_PASSWORD);
@@ -738,6 +785,7 @@ async function main() {
     officers: await prisma.officerProfile.count(),
     services: await prisma.websiteService.count(),
     aboutUs: await prisma.websiteAboutUs.count(),
+    mediaAttachments: await prisma.mediaAttachment.count(),
   };
 
   console.log("\n=== SEED SUMMARY ===");

@@ -40,7 +40,9 @@ export function ManageForms() {
             : data.map((r:any) => (
               <tr key={r.id} style={{ borderBottom:"1px solid rgba(0,0,0,0.04)" }}>
                 <td style={{ padding:"10px 16px" }}>{r.assessmentYear?.year||"—"}</td>
-                <td style={{ padding:"10px 16px", fontWeight:500 }}>{r.property?.propertyId||"—"}</td>
+                <td style={{ padding:"10px 16px", fontWeight:500 }}>
+                  {r.property?.propertyId ? <Link to={`/eo/assessments/${r.id}`} style={{ color:"#e05d36", textDecoration:"none" }}>{r.property.propertyId}</Link> : "—"}
+                </td>
                 <td style={{ padding:"10px 16px" }}>{r.property?.ward?.name||"—"}</td>
                 <td style={{ padding:"10px 16px" }}>{r.property?.ownerName||"—"}</td>
                 <td style={{ padding:"10px 16px" }}><Badge s={r.formStatus} /></td>

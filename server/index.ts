@@ -11,6 +11,8 @@ import { assessmentRoutes } from "./routes/assessments.js";
 import { paymentRoutes } from "./routes/payments.js";
 import { healthRoutes } from "./routes/health.js";
 import { uploadRoutes } from "./routes/uploads.js";
+import { mediaRoutes } from "./routes/media.js";
+import { recordRoutes } from "./routes/records.js";
 import { apiRateLimit, authRateLimit } from "./lib/rate-limit.js";
 
 const app = express();
@@ -32,6 +34,8 @@ app.use("/api", healthRoutes);
 // API routes
 app.use("/api", authRoutes);
 app.use("/api", uploadRoutes);
+app.use("/api", mediaRoutes);
+app.use("/api", recordRoutes);
 app.use("/api", dashboardRoutes);
 app.use("/api", assessmentRoutes);
 app.use("/api", paymentRoutes);

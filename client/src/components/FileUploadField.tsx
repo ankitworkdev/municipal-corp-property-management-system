@@ -7,9 +7,10 @@ type Props = {
   onChange: (url: string) => void;
   folder: UploadFolder;
   accept?: string;
+  pathEntityId?: string;
 };
 
-export function FileUploadField({ label, value, onChange, folder, accept = "image/*,application/pdf" }: Props) {
+export function FileUploadField({ label, value, onChange, folder, accept = "image/*,application/pdf", pathEntityId }: Props) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
 
@@ -18,7 +19,7 @@ export function FileUploadField({ label, value, onChange, folder, accept = "imag
     setError("");
     setUploading(true);
     try {
-      const url = await uploadFile(file, folder);
+      const url = await uploadFile(file, folder, pathEntityId ? { pathEntityId } : undefined);
       onChange(url);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Upload failed");

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { api } from "../lib/api";
+import { MediaGallery } from "../components/MediaGallery";
 
 export function PropertyDetail() {
   const { id } = useParams();
@@ -10,14 +11,15 @@ export function PropertyDetail() {
 
   useEffect(() => {
     if (!id) return;
-    // Fetch property from the list (since we don't have a single-get endpoint)
-    api("/properties?pageSize=100").then(d => {
-      const prop = d.data?.find((p: any) => p.id === id || p.propertyId === id);
-      setProperty(prop);
-      setLoading(false);
-    });
-    api("/assessments?pageSize=100").then(d => {
-      const related = d.data?.filter((a: any) => a.property?.propertyId === id || a.propertyId === id) || [];
+    api(`/properties/${id}`)
+      .then((d) => setProperty(d.data))
+      .catch(() => setProperty(null))
+      .finally(() => setLoading(false));
+    api("/assessments?pageSize=100").then((d) => {
+      const related =
+        d.data?.filter(
+          (a: any) => a.propertyId === id || a.property?.id === id || a.property?.propertyId === id,
+        ) || [];
       setAssessments(related);
     });
   }, [id]);
@@ -91,6 +93,10 @@ export function PropertyDetail() {
           )}
         </div>
       </div>
+
+      {property.id && (
+        <MediaGallery title="Property photos (up to 5)" entityType="PROPERTY" entityId={property.id} folder="properties" />
+      )}
     </div>
   );
 }

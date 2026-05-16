@@ -1,6 +1,7 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 const { compare, hash } = bcrypt;
+import { UserRole, UserStatus } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { createToken, getUser, requireAuth } from "../lib/auth.js";
 import { config } from "../lib/config.js";
@@ -42,10 +43,146 @@ authRoutes.post("/login", validate(loginSchema), asyncHandler(async (req, res) =
 }));
 
 authRoutes.get("/me", async (req, res) => {
-  const user = await getUser(req);
-  if (!user) return res.status(401).json({ user: null });
-  res.json({ user });
+  const session = await getUser(req);
+  if (!session) return res.status(401).json({ user: null });
+  const dbUser = await prisma.user.findUnique({
+    where: { id: session.id },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+      mobile: true,
+      role: true,
+      profilePhotoUrl: true,
+    },
+  });
+  if (!dbUser) return res.status(401).json({ user: null });
+  res.json({
+    user: {
+      id: dbUser.id,
+      name: `${dbUser.firstName} ${dbUser.lastName}`,
+      firstName: dbUser.firstName,
+      lastName: dbUser.lastName,
+      email: dbUser.email,
+      mobile: dbUser.mobile,
+      role: dbUser.role,
+      profilePhotoUrl: dbUser.profilePhotoUrl,
+    },
+  });
 });
+
+authRoutes.patch("/profile", requireAuth, asyncHandler(async (req, res) => {
+  const session = (req as any).user;
+  const { firstName, lastName, mobile, email, profilePhotoUrl } = req.body;
+  const data: Record<string, string | null> = {};
+  if (firstName !== undefined) data.firstName = String(firstName).trim();
+  if (lastName !== undefined) data.lastName = String(lastName).trim();
+  if (mobile !== undefined) {
+    const m = String(mobile).trim();
+    if (!/^[6-9]\d{9}$/.test(m)) return res.status(400).json({ error: "Invalid mobile number" });
+    const taken = await prisma.user.findFirst({ where: { mobile: m, NOT: { id: session.id } } });
+    if (taken) return res.status(409).json({ error: "Mobile already in use" });
+    data.mobile = m;
+  }
+  if (email !== undefined) {
+    const e = email ? String(email).trim() : null;
+    if (e) {
+      const taken = await prisma.user.findFirst({ where: { email: e, NOT: { id: session.id } } });
+      if (taken) return res.status(409).json({ error: "Email already in use" });
+    }
+    data.email = e;
+  }
+  if (profilePhotoUrl !== undefined) data.profilePhotoUrl = profilePhotoUrl ? String(profilePhotoUrl) : null;
+
+  const updated = await prisma.user.update({
+    where: { id: session.id },
+    data,
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+      mobile: true,
+      role: true,
+      profilePhotoUrl: true,
+    },
+  });
+
+  await logAudit(req, {
+    userId: session.id,
+    userName: session.name,
+    userRole: session.role,
+    action: "PROFILE_UPDATE",
+    entity: "User",
+    entityId: session.id,
+  });
+
+  res.json({
+    success: true,
+    user: {
+      id: updated.id,
+      name: `${updated.firstName} ${updated.lastName}`,
+      firstName: updated.firstName,
+      lastName: updated.lastName,
+      email: updated.email,
+      mobile: updated.mobile,
+      role: updated.role,
+      profilePhotoUrl: updated.profilePhotoUrl,
+    },
+  });
+}));
+
+authRoutes.put("/users/:id", requireAuth, asyncHandler(async (req, res) => {
+  const session = (req as any).user;
+  const id = Array.isArray(req.params.id) ? req.params.id[0]! : req.params.id;
+  if (session.id !== id && !["ADMIN", "EO"].includes(session.role)) {
+    return res.status(403).json({ error: "Not allowed" });
+  }
+  const { firstName, lastName, mobile, email, profilePhotoUrl, status, role } = req.body;
+  const data: {
+    firstName?: string;
+    lastName?: string;
+    mobile?: string;
+    email?: string | null;
+    profilePhotoUrl?: string | null;
+    status?: UserStatus;
+    role?: UserRole;
+  } = {};
+  if (firstName !== undefined) data.firstName = String(firstName).trim();
+  if (lastName !== undefined) data.lastName = String(lastName).trim();
+  if (mobile !== undefined) data.mobile = String(mobile).trim();
+  if (email !== undefined) data.email = email ? String(email).trim() : null;
+  if (profilePhotoUrl !== undefined) data.profilePhotoUrl = profilePhotoUrl || null;
+  if (status !== undefined && ["ADMIN", "EO"].includes(session.role)) data.status = status as UserStatus;
+  if (role !== undefined && ["ADMIN", "EO"].includes(session.role)) data.role = role as UserRole;
+
+  const updated = await prisma.user.update({
+    where: { id },
+    data,
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+      mobile: true,
+      role: true,
+      status: true,
+      profilePhotoUrl: true,
+    },
+  });
+
+  await logAudit(req, {
+    userId: session.id,
+    userName: session.name,
+    userRole: session.role,
+    action: "USER_UPDATE",
+    entity: "User",
+    entityId: id,
+  });
+
+  res.json({ success: true, data: updated });
+}));
 
 authRoutes.post("/logout", (req, res) => {
   res.clearCookie("auth-token", { path: "/", secure: config.auth.cookieSecure, sameSite: "lax" });

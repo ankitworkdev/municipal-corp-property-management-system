@@ -16,6 +16,12 @@ import { DisputesPage } from "./pages/Disputes";
 import { GrievancesPage } from "./pages/Grievances";
 import { ChangePassword } from "./pages/ChangePassword";
 import { ArvMatrix } from "./pages/ArvMatrix";
+import { MyProfile } from "./pages/MyProfile";
+import { UserEdit } from "./pages/UserEdit";
+import { PaymentDetail } from "./pages/PaymentDetail";
+import { DemandDetail } from "./pages/DemandDetail";
+import { DisputeDetail } from "./pages/DisputeDetail";
+import { AssessmentDetail } from "./pages/AssessmentDetail";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -50,8 +56,15 @@ export function App() {
           <Route path="reporting" element={<DataPage title="Reports" api="/assessments" columns={[{key:"assessmentYear.year",h:"Year"},{key:"property.propertyId",h:"Property ID"},{key:"property.ward.name",h:"Ward"},{key:"formStatus",h:"Status",badge:true}]} />} />
           <Route path="manage-form" element={<ManageForms />} />
           <Route path="manage-dispute" element={<DisputesPage />} />
+          <Route path="disputes/:id" element={<DisputeDetail />} />
+          <Route path="assessments/:id" element={<AssessmentDetail />} />
           <Route path="manage-grievances" element={<GrievancesPage />} />
-          <Route path="payment-detail" element={<DataPage title="Payments" api="/payments" columns={[{key:"amount",h:"Amount",prefix:"₹"},{key:"paymentMode",h:"Mode"},{key:"paymentStatus",h:"Status",badge:true},{key:"paymentId",h:"ID"}]} />} />
+          <Route path="payment-detail" element={<DataPage title="Payments" api="/payments" columns={[{key:"amount",h:"Amount",prefix:"₹"},{key:"paymentMode",h:"Mode"},{key:"paymentStatus",h:"Status",badge:true},{key:"paymentId",h:"ID"}]} rowLink="/eo/payments" />} />
+          <Route path="payments/:id" element={<PaymentDetail />} />
+          <Route path="demands" element={<DataPage title="Demands" api="/demands" columns={[{key:"demandId",h:"Demand ID"},{key:"amount",h:"Amount",prefix:"₹"},{key:"balanceAmount",h:"Balance",prefix:"₹"},{key:"status",h:"Status",badge:true},{key:"assessment.property.propertyId",h:"Property"}]} rowLink="/eo/demands" />} />
+          <Route path="demands/:id" element={<DemandDetail />} />
+          <Route path="my-profile" element={<MyProfile />} />
+          <Route path="users/:id" element={<UserEdit />} />
           <Route path="update-payment" element={<UpdatePayment />} />
           <Route path="new-assessment" element={<NewAssessment />} />
           <Route path="wards" element={<DataPage title="Wards" api="/wards" columns={[{key:"name",h:"Ward Name"},{key:"description",h:"Description"}]} addFields={[{key:"name",label:"Name"},{key:"description",label:"Description"}]} />} />
@@ -66,7 +79,7 @@ export function App() {
           <Route path="solid-waste-charges" element={<DataPage title="Solid Waste Charges" api="/solid-waste-charges" columns={[{key:"consumerType",h:"Consumer Type"},{key:"yearlyCharge",h:"Yearly (₹)"}]} />} />
           <Route path="vacant-land-tax-rates" element={<DataPage title="Vacant Land Rates" api="/vacant-land-tax-rates" columns={[{key:"roadType",h:"Road Type"},{key:"ratePerSqFt",h:"Rate/Sq.Ft"}]} />} />
           <Route path="vacant-land-threshold" element={<DataPage title="Vacant Land Threshold" api="/vacant-land-threshold" columns={[{key:"thresholdPercent",h:"Threshold (%)"}]} />} />
-          <Route path="citizen-role" element={<DataPage title="Citizens" api="/users/citizens" columns={[{key:"firstName",h:"First"},{key:"lastName",h:"Last"},{key:"mobile",h:"Mobile"},{key:"status",h:"Status",badge:true}]} />} />
+          <Route path="citizen-role" element={<DataPage title="Citizens" api="/users/citizens" columns={[{key:"firstName",h:"First"},{key:"lastName",h:"Last"},{key:"mobile",h:"Mobile"},{key:"profilePhotoUrl",h:"Photo",link:true},{key:"status",h:"Status",badge:true}]} rowLink="/eo/users" />} />
           <Route path="official-role" element={<DataPage title="Officials" api="/users/officials" columns={[{key:"firstName",h:"First"},{key:"lastName",h:"Last"},{key:"role",h:"Role"},{key:"email",h:"Email"},{key:"status",h:"Status",badge:true}]} addFields={[{key:"firstName",label:"First Name"},{key:"lastName",label:"Last Name"},{key:"email",label:"Email"},{key:"mobile",label:"Mobile"},{key:"role",label:"Role",type:"select",options:[{v:"EO",l:"Executive Officer"},{v:"HC",l:"Head Clerk"},{v:"TI",l:"Tax Inspector"},{v:"GO",l:"Grievance Officer"}]},{key:"password",label:"Password"}]} />} />
           <Route path="staffs" element={<DataPage title="Staff" api="/staffs" columns={[{key:"name",h:"Name"},{key:"email",h:"Email"},{key:"role",h:"Role"},{key:"assignedWards",h:"Wards"}]} />} />
           <Route path="properties" element={<DataPage title="Properties" api="/properties" columns={[{key:"propertyId",h:"ID"},{key:"propertyType",h:"Type"},{key:"ownerName",h:"Owner"},{key:"mobile",h:"Mobile"},{key:"verificationStatus",h:"Status",badge:true}]} rowLink="/eo/properties" />} />
@@ -74,7 +87,7 @@ export function App() {
           <Route path="manage-settings" element={<Settings />} />
           <Route path="change-password" element={<ChangePassword />} />
           <Route path="audit-logs" element={<DataPage title="Audit Logs" api="/audit-logs" columns={[{key:"action",h:"Action"},{key:"userName",h:"User"},{key:"userRole",h:"Role"},{key:"entity",h:"Entity"},{key:"details",h:"Details"}]} />} />
-          <Route path="website-content/contents" element={<DataPage title="Website Content" api="/website-content/contents" columns={[{key:"purpose",h:"Purpose"},{key:"title",h:"Title"},{key:"thumbnailUrl",h:"Image",link:true}]} addFields={[{key:"purpose",label:"Purpose",type:"select",options:[{v:"GALLERY",l:"Gallery"},{v:"ANNOUNCEMENT",l:"Announcement"},{v:"NOTICE",l:"Notice"},{v:"BANNER",l:"Banner"}]},{key:"title",label:"Title"},{key:"description",label:"Description"},{key:"thumbnailUrl",label:"Image / media",type:"file",uploadFolder:"website"}]} />} />
+          <Route path="website-content/contents" element={<DataPage title="Website Content" api="/website-content/contents" subtitle="Click + Add, then use the “Image / media” file field in the form to upload." columns={[{key:"purpose",h:"Purpose"},{key:"title",h:"Title"},{key:"thumbnailUrl",h:"Image",link:true}]} addFields={[{key:"purpose",label:"Purpose",type:"select",options:[{v:"GALLERY",l:"Gallery"},{v:"ANNOUNCEMENT",l:"Announcement"},{v:"NOTICE",l:"Notice"},{v:"BANNER",l:"Banner"}]},{key:"title",label:"Title"},{key:"description",label:"Description"},{key:"thumbnailUrl",label:"Image / media",type:"file",uploadFolder:"website"}]} />} />
           <Route path="website-content/helpline-numbers" element={<DataPage title="Helpline Numbers" api="/website-content/helpline-numbers" columns={[{key:"name",h:"Name"},{key:"number",h:"Number"}]} addFields={[{key:"name",label:"Name"},{key:"number",label:"Number"},{key:"designation",label:"Designation"}]} />} />
           <Route path="website-content/links" element={<DataPage title="Useful Links" api="/website-content/links" columns={[{key:"title",h:"Title"},{key:"url",h:"URL"}]} addFields={[{key:"title",label:"Title"},{key:"url",label:"URL"}]} />} />
           <Route path="website-content/officers-profile" element={<DataPage title="Officers" api="/website-content/officers-profile" columns={[{key:"name",h:"Name"},{key:"designation",h:"Designation"},{key:"photoUrl",h:"Photo",link:true}]} addFields={[{key:"name",label:"Name"},{key:"designation",label:"Designation"},{key:"mobile",label:"Mobile"},{key:"email",label:"Email"},{key:"photoUrl",label:"Photo",type:"file",uploadFolder:"officers"}]} />} />

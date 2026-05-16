@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { api, apiPut } from "../lib/api";
 
 const Badge = ({ s }: { s: string }) => {
@@ -44,8 +45,12 @@ export function DisputesPage() {
               : data.length === 0 ? <tr><td colSpan={6} style={{ padding: 48, textAlign: "center", color: "#7c7570" }}>No disputes</td></tr>
               : data.map((d: any) => (
                 <tr key={d.id} style={{ borderBottom: "1px solid rgba(0,0,0,0.04)" }}>
-                  <td style={{ padding: "10px 16px", fontWeight: 500 }}>{d.property?.propertyId || "—"}</td>
-                  <td style={{ padding: "10px 16px" }}>{d.subject}</td>
+                  <td style={{ padding: "10px 16px", fontWeight: 500 }}>
+                    {d.property?.propertyId ? <Link to={`/eo/properties/${d.property.id}`} style={{ color: "#1a1614", textDecoration: "none" }}>{d.property.propertyId}</Link> : "—"}
+                  </td>
+                  <td style={{ padding: "10px 16px" }}>
+                    <Link to={`/eo/disputes/${d.id}`} style={{ color: "#e05d36", textDecoration: "none" }}>{d.subject}</Link>
+                  </td>
                   <td style={{ padding: "10px 16px" }}>{d.createdBy?.firstName} {d.createdBy?.lastName}</td>
                   <td style={{ padding: "10px 16px" }}>
                     {d.supportingDocUrl ? (
