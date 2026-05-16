@@ -12,6 +12,7 @@ on:
     branches: [main]
   push:
     branches: [main]
+  workflow_dispatch:
 
 concurrency:
   group: ci-cd-${{ github.ref }}
@@ -63,6 +64,6 @@ jobs:
             echo "Until then, use Manual Deploy in the Render dashboard or fix the Render GitHub integration."
             exit 1
           fi
-          echo "Triggering Render production deploy..."
+          echo "Triggering Render production deploy for commit ${{ github.sha }}..."
           curl -fsSL -X POST "$RENDER_DEPLOY_HOOK_URL"
-          echo "Deploy hook accepted."
+          echo "Deploy hook accepted. Check Render dashboard → municipal-pms → Events."
