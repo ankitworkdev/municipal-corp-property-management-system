@@ -48,7 +48,7 @@ export function PaymentDetail() {
         </p>
       </div>
 
-      <MediaGallery title="Receipts & payment proof" entityType="PAYMENT" entityId={payment.id} folder="receipts" />
+      <MediaGallery title="Receipts & payment proof (up to 2)" entityType="PAYMENT" entityId={payment.id} folder="payments" />
       {payment.demand?.id && (
         <MediaGallery title="Related demand documents" entityType="DEMAND" entityId={payment.demand.id} folder="demands" />
       )}

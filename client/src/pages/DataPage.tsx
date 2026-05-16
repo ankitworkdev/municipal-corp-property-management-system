@@ -2,9 +2,18 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, apiPost, apiPut } from "../lib/api";
 import { FileUploadField } from "../components/FileUploadField";
-import { isImageUrl, type UploadFolder } from "../lib/upload";
+import { NameWithAvatar } from "../components/ListAvatar";
+import { isImageUrl, type MediaEntityType, type UploadFolder } from "../lib/upload";
 
-interface Col { key: string; h: string; badge?: boolean; prefix?: string; link?: boolean; }
+interface Col {
+  key: string;
+  h: string;
+  badge?: boolean;
+  prefix?: string;
+  link?: boolean;
+  type?: "avatar" | "entityThumb";
+  nameKeys?: string[];
+}
 interface AddField {
   key: string;
   label: string;
@@ -27,9 +36,26 @@ const Badge = ({ status }: { status: string }) => {
 
 const getValue = (row: any, key: string) => key.split(".").reduce((o: any, k) => o?.[k], row);
 
-export function DataPage({ title, api: apiPath, columns, addFields, rowLink, subtitle }: { title: string; api: string; columns: Col[]; addFields?: AddField[]; rowLink?: string; subtitle?: string }) {
+export function DataPage({
+  title,
+  api: apiPath,
+  columns,
+  addFields,
+  rowLink,
+  subtitle,
+  entityPreviewType,
+}: {
+  title: string;
+  api: string;
+  columns: Col[];
+  addFields?: AddField[];
+  rowLink?: string;
+  subtitle?: string;
+  entityPreviewType?: MediaEntityType;
+}) {
   const [data, setData] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
+  const [entityPreviews, setEntityPreviews] = useState<Record<string, string | null>>({});
   const nav = useNavigate();
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -46,6 +72,18 @@ export function DataPage({ title, api: apiPath, columns, addFields, rowLink, sub
     api(`${apiPath}${params}`).then(d => { setData(d.data || []); setTotal(d.pagination?.total || 0); setLoading(false); }).catch(() => setLoading(false));
   };
   useEffect(load, [apiPath, page, search]);
+
+  useEffect(() => {
+    if (!entityPreviewType || !data.length) {
+      setEntityPreviews({});
+      return;
+    }
+    const ids = data.map((r) => r.id).filter(Boolean);
+    if (!ids.length) return;
+    api(`/media/previews?entityType=${encodeURIComponent(entityPreviewType)}&entityIds=${ids.join(",")}`)
+      .then((d) => setEntityPreviews(d.data || {}))
+      .catch(() => setEntityPreviews({}));
+  }, [data, entityPreviewType]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -146,7 +184,22 @@ export function DataPage({ title, api: apiPath, columns, addFields, rowLink, sub
                 <tr key={row.id || i} onClick={() => rowLink && nav(`${rowLink}/${row.id}`)} style={{ borderBottom: "1px solid rgba(0,0,0,0.04)", cursor: rowLink ? "pointer" : "default" }}>
                   {columns.map(c => {
                     const val = getValue(row, c.key);
-                    const display = c.badge ? <Badge status={val || "—"} />
+                    const display = c.type === "avatar" ? (
+                      <NameWithAvatar
+                        name={
+                          c.nameKeys
+                            ? c.nameKeys.map((k) => getValue(row, k)).filter(Boolean).join(" ")
+                            : String(val ?? "—")
+                        }
+                        imageUrl={row.profilePhotoThumbUrl || row.profilePhotoUrl}
+                      />
+                    ) : c.type === "entityThumb" ? (
+                      <NameWithAvatar
+                        name={String(val ?? "—")}
+                        imageUrl={entityPreviews[row.id] || null}
+                        square
+                      />
+                    ) : c.badge ? <Badge status={val || "—"} />
                       : c.link && val ? (
                         isImageUrl(String(val)) ? (
                           <a href={String(val)} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>

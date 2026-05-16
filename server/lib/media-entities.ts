@@ -14,7 +14,7 @@ export const MEDIA_LIMITS: Record<MediaEntityType, number> = {
   USER: 0,
   PROPERTY: 5,
   DEMAND: 2,
-  PAYMENT: 3,
+  PAYMENT: 2,
   ASSESSMENT: 5,
   DISPUTE: 3,
 };
@@ -31,7 +31,13 @@ export const UPLOAD_FOLDERS = new Set([
   "users",
   "receipts",
   "assessments",
+  "thumbnails",
 ]);
+
+export function buildThumbnailPath(entityType: string, entityId: string, originalName: string): string {
+  const safe = originalName.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 80) || "thumb.jpg";
+  return `thumbnails/${entityType.toLowerCase()}/${entityId}/${Date.now()}-${safe}`;
+}
 
 export function getMediaLimit(entityType: string): number {
   return MEDIA_LIMITS[entityType as MediaEntityType] ?? 5;

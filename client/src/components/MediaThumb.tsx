@@ -1,21 +1,29 @@
 import { useEffect, useState } from "react";
-import { isImageUrl, isPdfUrl } from "../lib/upload";
+import { isImageUrl, isPdfUrl, previewUrl } from "../lib/upload";
 
 type Props = {
   url: string;
+  thumbnailUrl?: string | null;
   fileName?: string | null;
   mimeType?: string | null;
   onImageClick?: (url: string) => void;
 };
 
-export function MediaThumb({ url, fileName, mimeType, onImageClick }: Props) {
+export function MediaThumb({ url, thumbnailUrl, fileName, mimeType, onImageClick }: Props) {
   const pdf = isPdfUrl(url, mimeType);
   const image = !pdf && isImageUrl(url, mimeType);
+  const displaySrc = previewUrl(url, thumbnailUrl, mimeType);
 
-  if (image) {
+  if (image || (pdf && thumbnailUrl)) {
     return (
-      <button type="button" className="media-thumb-btn" onClick={() => onImageClick?.(url)} aria-label="View full size">
-        <img src={url} alt={fileName || ""} loading="lazy" />
+      <button
+        type="button"
+        className={`media-thumb-btn${pdf ? " media-thumb-pdf" : ""}`}
+        onClick={() => (image && onImageClick ? onImageClick(url) : window.open(url, "_blank"))}
+        aria-label={pdf ? `Open PDF ${fileName || ""}` : "View full size"}
+      >
+        <img src={displaySrc} alt={fileName || ""} loading="lazy" />
+        {pdf && <span className="media-pdf-badge">PDF</span>}
       </button>
     );
   }

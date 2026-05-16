@@ -77,10 +77,18 @@ crud("/users/officials", prisma.user, { orderBy: { createdAt: "desc" }, where: (
 crudRoutes.get("/staffs", requireAuth, async (req, res) => {
   const { page, take, skip } = paginate(req);
   const [data, total] = await Promise.all([
-    prisma.staff.findMany({ skip, take, include: { user: { select: { firstName: true, lastName: true, email: true, role: true } }, assignedWards: { include: { ward: { select: { name: true } } } } }, orderBy: { createdAt: "desc" } }),
+    prisma.staff.findMany({ skip, take, include: { user: { select: { firstName: true, lastName: true, email: true, role: true, profilePhotoUrl: true, profilePhotoThumbUrl: true } }, assignedWards: { include: { ward: { select: { name: true } } } } }, orderBy: { createdAt: "desc" } }),
     prisma.staff.count(),
   ]);
-  const formatted = data.map((s: any) => ({ id: s.id, name: `${s.user.firstName} ${s.user.lastName}`, email: s.user.email, role: s.user.role, assignedWards: s.assignedWards.map((a: any) => a.ward.name).join(", ") }));
+  const formatted = data.map((s: any) => ({
+    id: s.id,
+    name: `${s.user.firstName} ${s.user.lastName}`,
+    email: s.user.email,
+    role: s.user.role,
+    profilePhotoUrl: s.user.profilePhotoUrl,
+    profilePhotoThumbUrl: s.user.profilePhotoThumbUrl,
+    assignedWards: s.assignedWards.map((a: any) => a.ward.name).join(", "),
+  }));
   res.json({ success: true, data: formatted, pagination: { total, page, pageSize: take, totalPages: Math.ceil(total / take) } });
 });
 

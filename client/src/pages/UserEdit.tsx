@@ -7,7 +7,16 @@ import { FileUploadField } from "../components/FileUploadField";
 export function UserEdit() {
   const { id } = useParams();
   const { user: session } = useAuth();
-  const [form, setForm] = useState({ firstName: "", lastName: "", email: "", mobile: "", profilePhotoUrl: "", status: "ACTIVE", role: "USER" });
+  const [form, setForm] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    mobile: "",
+    profilePhotoUrl: "",
+    profilePhotoThumbUrl: "",
+    status: "ACTIVE",
+    role: "USER",
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
@@ -24,6 +33,7 @@ export function UserEdit() {
           email: u.email || "",
           mobile: u.mobile,
           profilePhotoUrl: u.profilePhotoUrl || "",
+          profilePhotoThumbUrl: u.profilePhotoThumbUrl || "",
           status: u.status,
           role: u.role,
         });
@@ -68,7 +78,13 @@ export function UserEdit() {
         <FileUploadField
           label="Profile photo"
           value={form.profilePhotoUrl}
-          onChange={(url) => setForm((p) => ({ ...p, profilePhotoUrl: url }))}
+          onChange={(url, thumb) =>
+            setForm((p) => ({
+              ...p,
+              profilePhotoUrl: url,
+              profilePhotoThumbUrl: thumb || "",
+            }))
+          }
           folder="users"
           pathEntityId={id}
           accept="image/jpeg,image/png,image/webp,image/gif"

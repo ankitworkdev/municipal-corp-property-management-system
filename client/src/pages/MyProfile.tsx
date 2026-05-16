@@ -4,7 +4,14 @@ import { FileUploadField } from "../components/FileUploadField";
 
 export function MyProfile() {
   const { user, refresh } = useAuth();
-  const [form, setForm] = useState({ firstName: "", lastName: "", email: "", mobile: "", profilePhotoUrl: "" });
+  const [form, setForm] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    mobile: "",
+    profilePhotoUrl: "",
+    profilePhotoThumbUrl: "",
+  });
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
@@ -17,6 +24,7 @@ export function MyProfile() {
       email: user.email || "",
       mobile: user.mobile || "",
       profilePhotoUrl: user.profilePhotoUrl || "",
+      profilePhotoThumbUrl: user.profilePhotoThumbUrl || "",
     });
   }, [user]);
 
@@ -64,7 +72,11 @@ export function MyProfile() {
         <div style={{ display: "flex", gap: 20, alignItems: "flex-start", flexWrap: "wrap" }}>
           <div style={{ flex: "0 0 200px" }}>
             {form.profilePhotoUrl ? (
-              <img src={form.profilePhotoUrl} alt="" style={{ width: 120, height: 120, borderRadius: "50%", objectFit: "cover", border: "3px solid #e05d36" }} />
+              <img
+                src={form.profilePhotoThumbUrl || form.profilePhotoUrl}
+                alt=""
+                style={{ width: 120, height: 120, borderRadius: "50%", objectFit: "cover", border: "3px solid #e05d36" }}
+              />
             ) : (
               <div style={{ width: 120, height: 120, borderRadius: "50%", background: "linear-gradient(135deg, #e05d36, #f0a060)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 40, fontWeight: 600 }}>
                 {user.name[0]}
@@ -73,7 +85,13 @@ export function MyProfile() {
             <FileUploadField
               label="Profile photo"
               value={form.profilePhotoUrl}
-              onChange={(url) => setForm((p) => ({ ...p, profilePhotoUrl: url }))}
+              onChange={(url, thumb) =>
+                setForm((p) => ({
+                  ...p,
+                  profilePhotoUrl: url,
+                  profilePhotoThumbUrl: thumb || "",
+                }))
+              }
               folder="users"
               pathEntityId={user.id}
               accept="image/jpeg,image/png,image/webp,image/gif"

@@ -8,6 +8,35 @@ import { MEDIA_ENTITY_TYPES, getMediaLimit } from "../lib/media-entities.js";
 export const mediaRoutes = Router();
 
 mediaRoutes.get(
+  "/media/previews",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const entityType = String(req.query.entityType || "");
+    const ids = String(req.query.entityIds || "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (!MEDIA_ENTITY_TYPES.has(entityType) || !ids.length) {
+      throw new AppError(400, "entityType and entityIds are required");
+    }
+    const rows = await prisma.mediaAttachment.findMany({
+      where: { entityType, entityId: { in: ids } },
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+      select: { entityId: true, url: true, thumbnailUrl: true, mimeType: true },
+    });
+    const data: Record<string, string | null> = {};
+    for (const row of rows) {
+      if (data[row.entityId] !== undefined) continue;
+      const preview =
+        row.thumbnailUrl ||
+        (row.mimeType?.startsWith("image/") ? row.url : null);
+      data[row.entityId] = preview;
+    }
+    res.json({ success: true, data });
+  }),
+);
+
+mediaRoutes.get(
   "/media",
   requireAuth,
   asyncHandler(async (req, res) => {

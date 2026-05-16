@@ -8,6 +8,7 @@ import { MediaThumb } from "./MediaThumb";
 type Attachment = {
   id: string;
   url: string;
+  thumbnailUrl?: string | null;
   fileName?: string | null;
   mimeType?: string | null;
   caption?: string | null;
@@ -119,6 +120,7 @@ export function MediaGallery({
             <div key={item.id} className="media-thumb-card">
               <MediaThumb
                 url={item.url}
+                thumbnailUrl={item.thumbnailUrl}
                 fileName={item.fileName}
                 mimeType={item.mimeType}
                 onImageClick={setLightbox}
