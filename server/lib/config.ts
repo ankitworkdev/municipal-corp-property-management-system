@@ -12,6 +12,8 @@ export const config = {
     tokenExpiry: process.env.TOKEN_EXPIRY || "24h",
     cookieName: "auth-token",
     cookieMaxAge: 86400000, // 24 hours
+    /** HTTPS hosts (e.g. Render) require Secure cookies */
+    cookieSecure: process.env.NODE_ENV === "production",
   },
 
   cors: {

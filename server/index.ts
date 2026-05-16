@@ -13,6 +13,7 @@ import { healthRoutes } from "./routes/health.js";
 import { apiRateLimit, authRateLimit } from "./lib/rate-limit.js";
 
 const app = express();
+app.set("trust proxy", 1);
 
 // Core middleware
 app.use(cors({ origin: config.cors.origin, credentials: true }));

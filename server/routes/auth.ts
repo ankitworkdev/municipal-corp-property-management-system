@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 const { compare, hash } = bcrypt;
 import { prisma } from "../lib/prisma.js";
 import { createToken, getUser, requireAuth } from "../lib/auth.js";
+import { config } from "../lib/config.js";
 import { validate, loginSchema, citizenLoginSchema, registerSchema, changePasswordSchema } from "../lib/validate.js";
 import { asyncHandler } from "../lib/errors.js";
 import { logAudit } from "../lib/audit.js";
@@ -32,7 +33,7 @@ authRoutes.post("/login", validate(loginSchema), asyncHandler(async (req, res) =
 
     await logAudit(req, { userId: user.id, userEmail: user.email, userName: authUser.name, userRole: user.role, action: "LOGIN_SUCCESS", entity: "User", entityId: user.id });
 
-    res.cookie("auth-token", token, { httpOnly: true, secure: false, sameSite: "lax", path: "/", maxAge: 86400000 });
+    res.cookie("auth-token", token, { httpOnly: true, secure: config.auth.cookieSecure, sameSite: "lax", path: "/", maxAge: config.auth.cookieMaxAge });
     res.json({ success: true, user: authUser });
   } catch (err) {
     console.error("Login error:", err);
@@ -47,7 +48,7 @@ authRoutes.get("/me", async (req, res) => {
 });
 
 authRoutes.post("/logout", (req, res) => {
-  res.clearCookie("auth-token");
+  res.clearCookie("auth-token", { path: "/", secure: config.auth.cookieSecure, sameSite: "lax" });
   res.json({ success: true });
 });
 
@@ -116,7 +117,7 @@ authRoutes.post("/citizen-login", async (req, res) => {
 
     await logAudit(req, { userId: user.id, userEmail: user.email, userName: authUser.name, userRole: user.role, action: "CITIZEN_LOGIN_SUCCESS", entity: "User", entityId: user.id });
 
-    res.cookie("auth-token", token, { httpOnly: true, secure: false, sameSite: "lax", path: "/", maxAge: 86400000 });
+    res.cookie("auth-token", token, { httpOnly: true, secure: config.auth.cookieSecure, sameSite: "lax", path: "/", maxAge: config.auth.cookieMaxAge });
     res.json({ success: true, user: authUser });
   } catch (err) {
     console.error("Citizen login error:", err);
