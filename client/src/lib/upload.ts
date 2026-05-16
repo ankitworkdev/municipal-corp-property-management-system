@@ -13,6 +13,8 @@ export type UploadFolder =
 
 export type MediaEntityType = "USER" | "PROPERTY" | "DEMAND" | "PAYMENT" | "ASSESSMENT" | "DISPUTE";
 
+import { compressImageFiles } from "./image-compress";
+
 export interface UploadOptions {
   entityType?: MediaEntityType;
   entityId?: string;
@@ -20,13 +22,18 @@ export interface UploadOptions {
   pathEntityId?: string;
 }
 
+export async function prepareFilesForUpload(files: File[]): Promise<File[]> {
+  return compressImageFiles(files);
+}
+
 export async function uploadFile(
   file: File,
   folder: UploadFolder = "general",
   opts?: UploadOptions,
 ): Promise<string> {
+  const [prepared] = await prepareFilesForUpload([file]);
   const form = new FormData();
-  form.append("file", file);
+  form.append("file", prepared);
   form.append("folder", folder);
   if (opts?.entityType) form.append("entityType", opts.entityType);
   if (opts?.entityId) form.append("entityId", opts.entityId);
@@ -48,8 +55,9 @@ export async function uploadFiles(
   folder: UploadFolder = "general",
   opts?: UploadOptions,
 ): Promise<string[]> {
+  const prepared = await prepareFilesForUpload(files);
   const form = new FormData();
-  files.forEach((f) => form.append("files", f));
+  prepared.forEach((f) => form.append("files", f));
   form.append("folder", folder);
   if (opts?.entityType) form.append("entityType", opts.entityType);
   if (opts?.entityId) form.append("entityId", opts.entityId);
@@ -72,6 +80,12 @@ export async function fetchUploadStatus(): Promise<{ enabled: boolean }> {
   return { enabled: !!data.enabled };
 }
 
-export function isImageUrl(url: string): boolean {
+export function isImageUrl(url: string, mimeType?: string | null): boolean {
+  if (mimeType?.startsWith("image/") && mimeType !== "image/svg+xml") return true;
   return /\.(jpe?g|png|webp|gif)(\?|$)/i.test(url) || url.includes("image/");
+}
+
+export function isPdfUrl(url: string, mimeType?: string | null): boolean {
+  if (mimeType === "application/pdf") return true;
+  return /\.pdf(\?|$)/i.test(url) || url.toLowerCase().includes("application/pdf");
 }
